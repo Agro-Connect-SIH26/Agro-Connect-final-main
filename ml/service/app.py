@@ -103,6 +103,16 @@ class HealthResponse(BaseModel):
     mongo_ok: bool
 
 
+@app.get("/")
+def health_root() -> dict:
+    return {"ok": True, "status": "healthy"}
+
+
+@app.get("/health/root")
+def health_root_endpoint() -> dict:
+    return {"ok": True, "status": "healthy"}
+
+
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
     try:
