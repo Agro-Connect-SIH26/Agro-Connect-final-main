@@ -103,7 +103,7 @@ class HealthResponse(BaseModel):
     mongo_ok: bool
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def health_root() -> dict:
     return {"ok": True, "status": "healthy"}
 
