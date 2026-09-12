@@ -1,0 +1,10 @@
+{
+  "steps": {},
+  "consoleErrors": [
+    "Failed to load resource: net::ERR_NETWORK_IO_SUSPENDED",
+    "Failed to load resource: net::ERR_NETWORK_IO_SUSPENDED",
+    "Failed to load resource: net::ERR_NETWORK_IO_SUSPENDED"
+  ],
+  "networkRequests": [],
+  "error": "TimeoutError: page.waitForLoadState: Timeout 30000ms exceeded."
+}

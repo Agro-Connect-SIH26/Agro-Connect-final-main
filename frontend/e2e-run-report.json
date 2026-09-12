@@ -1,0 +1,143 @@
+{
+  "steps": {
+    "1_open_app": {
+      "passed": true,
+      "url": "http://localhost:5173/"
+    },
+    "2_login_farmer": {
+      "passed": true,
+      "user": "farmer@agroconnect.demo"
+    },
+    "3_open_market_prices": {
+      "passed": true
+    },
+    "4_safety_gate": {
+      "passed": true,
+      "requestsFired": 0,
+      "gateMessageVisible": true
+    },
+    "5_select_potato": {
+      "passed": true
+    },
+    "6_select_bihar": {
+      "passed": true
+    },
+    "7_live_prices": {
+      "passed": true,
+      "rowCount": 5858,
+      "hasLiveBadge": true
+    },
+    "8_table_usable": {
+      "passed": true,
+      "sampleRow": "Potato\tMadhubani APMC\tMadhubani APMC, Madhubani\t11\t12\t13\t9 Dec 2026"
+    },
+    "10_price_trend": {
+      "passed": true,
+      "rechartsElements": 2,
+      "label": 0
+    },
+    "11_mandi_map": {
+      "passed": true,
+      "mapElements": 1,
+      "mandiLabel": 1
+    },
+    "9_district_refinement": {
+      "passed": true,
+      "initialRows": 5858,
+      "refinedRows": 5858
+    },
+    "12_farmer_decision_journey": {
+      "passed": true,
+      "hasCropLots": false,
+      "decisionSupportLoaded": false
+    },
+    "13_console_audit": {
+      "passed": true,
+      "errorCount": 0,
+      "errors": []
+    },
+    "15_backend_health": {
+      "passed": true,
+      "response": {
+        "status": 200,
+        "data": {
+          "status": "ok",
+          "service": "agroconnect-backend-node",
+          "version": "1.0.0",
+          "database": "ok",
+          "db_mode": "real",
+          "db_error": null,
+          "timestamp": "2026-09-12T07:52:06.048Z"
+        }
+      }
+    }
+  },
+  "consoleErrors": [],
+  "networkRequests": [
+    {
+      "url": "http://localhost:5173/api/market-prices/metadata",
+      "time": "2026-09-12T07:51:45.737Z"
+    },
+    {
+      "url": "http://localhost:5173/api/market-prices/metadata",
+      "time": "2026-09-12T07:51:45.737Z"
+    },
+    {
+      "url": "http://localhost:5173/api/market-prices/metadata?crop=Potato",
+      "time": "2026-09-12T07:51:47.406Z"
+    },
+    {
+      "url": "http://localhost:5173/api/market-prices/metadata?crop=Potato&state=Bihar",
+      "time": "2026-09-12T07:51:47.588Z"
+    },
+    {
+      "url": "http://localhost:5173/api/market-prices?crop=Potato&state=Bihar",
+      "time": "2026-09-12T07:51:47.691Z"
+    },
+    {
+      "url": "http://localhost:5173/api/market-prices/history/series?crop=Potato&state=Bihar",
+      "time": "2026-09-12T07:51:52.497Z"
+    },
+    {
+      "url": "http://localhost:5173/api/market-prices?crop=Potato&state=Bihar",
+      "time": "2026-09-12T07:51:52.497Z"
+    },
+    {
+      "url": "http://localhost:5173/api/market-prices/history/series?crop=Potato&state=Bihar",
+      "time": "2026-09-12T07:51:52.498Z"
+    },
+    {
+      "url": "http://localhost:5173/api/market-prices?crop=Potato&state=Bihar",
+      "time": "2026-09-12T07:51:52.498Z"
+    },
+    {
+      "url": "http://localhost:5173/api/market-prices/metadata?crop=Potato",
+      "time": "2026-09-12T07:51:59.616Z"
+    },
+    {
+      "url": "http://localhost:5173/api/market-prices/metadata?crop=Potato&state=Bihar",
+      "time": "2026-09-12T07:51:59.735Z"
+    },
+    {
+      "url": "http://localhost:5173/api/market-prices?crop=Potato&state=Bihar",
+      "time": "2026-09-12T07:52:00.756Z"
+    },
+    {
+      "url": "http://localhost:5173/api/market-prices/history/series?crop=Potato&state=Bihar",
+      "time": "2026-09-12T07:52:03.411Z"
+    },
+    {
+      "url": "http://localhost:5173/api/market-prices?crop=Potato&state=Bihar",
+      "time": "2026-09-12T07:52:03.411Z"
+    },
+    {
+      "url": "http://localhost:5173/api/market-prices/history/series?crop=Potato&state=Bihar",
+      "time": "2026-09-12T07:52:03.411Z"
+    },
+    {
+      "url": "http://localhost:5173/api/market-prices?crop=Potato&state=Bihar",
+      "time": "2026-09-12T07:52:03.411Z"
+    }
+  ],
+  "timestamp": "2026-09-12T07:51:40.358Z"
+}
