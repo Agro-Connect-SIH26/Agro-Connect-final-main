@@ -140,28 +140,12 @@ export default function GroupSaleOptIn({
   // rows are the only ones they're allowed to toggle.
   const myLotSet = new Set(myMemberLotPublicIds)
   const memberRows = (detail?.members || []).filter((m) => {
-    // m.crop_lot_id is the Mongo ObjectId. We can't always map it
-    // back to a publicId without a join, so use a best-effort: if
-    // the FPO detail has crop_lot_public_id (it doesn't today), use
-    // it. Otherwise, render in the order returned and let the parent
-    // pre-filter. We pass the entire list and rely on the backend
-    // to reject any non-member.
-    return true
+    return myLotSet.has(m.crop_lot_id_public)
   })
-  // Try to map by positional order: backend returns members in
-  // insertion order; if the current user is a member of N lots
-  // in the FPO, the relevant members for them are the subset that
-  // reference their lots. We can't always tell which those are
-  // without resolving ObjectIds, so we render all members and
-  // allow opt-in for any that the user owns (looked up via
-  // myMemberLotPublicIds' resolved ObjectIds — but those are
-  // publicIds, not ObjectIds). Conservative rendering: show
-  // every member in myMemberLotPublicIds as a row, using the
-  // member at the same index from the detail for the opt-in
-  // state. If counts differ (shouldn't happen for the current
-  // user's FPO membership), fall back to "Unknown".
-  const rows = myMemberLotPublicIds.map((lotPublicId, i) => {
-    const m = memberRows[i] || {}
+  // FPO detail now includes crop_lot_id_public for each member.
+  // We can deterministically match the user's lots to their member rows.
+  const rows = myMemberLotPublicIds.map((lotPublicId) => {
+    const m = memberRows.find(row => row.crop_lot_id_public === lotPublicId) || {}
     return {
       lotPublicId,
       opted_in: !!m.opted_in,

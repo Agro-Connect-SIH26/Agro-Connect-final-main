@@ -154,7 +154,21 @@ router.get(
   asyncHandler(async (req, res) => {
     const f = await FPO.findOne({ publicId: req.params.publicId });
     if (!f) throw new AppError(404, 'fpo not found');
-    res.json(f.toRead());
+
+    const wire = f.toRead();
+    if (wire.members && wire.members.length > 0) {
+      const lotIds = wire.members.map(m => m.crop_lot_id);
+      const lots = await CropLot.find({ _id: { $in: lotIds } }).select('publicId').lean();
+      const lotMap = {};
+      for (const lot of lots) {
+        lotMap[String(lot._id)] = lot.publicId;
+      }
+      for (const member of wire.members) {
+        member.crop_lot_id_public = lotMap[String(member.crop_lot_id)] || null;
+      }
+    }
+
+    res.json(wire);
   })
 );
 

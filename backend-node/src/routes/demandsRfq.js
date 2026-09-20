@@ -76,13 +76,13 @@ router.get(
     const q = {};
     if (req.query.status) q.status = String(req.query.status);
     if (req.query.crop) {
-      q.cropName = new RegExp(`^${String(req.query.crop).trim()}$`, 'i');
+      q.cropName = new RegExp(`^${escapeRegex(String(req.query.crop).trim())}$`, 'i');
     }
     if (req.query.state) {
-      q.state = new RegExp(`^${String(req.query.state).trim()}$`, 'i');
+      q.state = new RegExp(`^${escapeRegex(String(req.query.state).trim())}$`, 'i');
     }
     if (req.query.location) {
-      const loc = String(req.query.location).trim();
+      const loc = escapeRegex(String(req.query.location).trim());
       q.$or = [
         { location: new RegExp(loc, 'i') },
         { state: new RegExp(loc, 'i') },
@@ -274,5 +274,12 @@ router.post(
     res.status(201).json(payload);
   })
 );
+
+/**
+ * Escape special regex characters.
+ */
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 module.exports = { router };

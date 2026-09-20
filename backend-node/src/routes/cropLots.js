@@ -60,8 +60,8 @@ router.get(
   asyncHandler(async (req, res) => {
     const q = {};
     if (req.query.status) q.status = String(req.query.status);
-    if (req.query.crop) q.cropName = new RegExp(`^${String(req.query.crop)}$`, 'i');
-    if (req.query.state) q.state = new RegExp(`^${String(req.query.state)}$`, 'i');
+    if (req.query.crop) q.cropName = new RegExp(`^${escapeRegex(String(req.query.crop))}$`, 'i');
+    if (req.query.state) q.state = new RegExp(`^${escapeRegex(String(req.query.state))}$`, 'i');
     if (req.query.owner) q.sellerUserPublicId = String(req.query.owner);
     const list = await CropLot.find(q).sort({ createdAt: -1 });
     res.json({ results: list.map((l) => l.toRead()) });
@@ -72,8 +72,8 @@ router.get(
   '/available',
   asyncHandler(async (req, res) => {
     const q = { status: 'ACTIVE' };
-    if (req.query.crop) q.cropName = new RegExp(`^${String(req.query.crop)}$`, 'i');
-    if (req.query.state) q.state = new RegExp(`^${String(req.query.state)}$`, 'i');
+    if (req.query.crop) q.cropName = new RegExp(`^${escapeRegex(String(req.query.crop))}$`, 'i');
+    if (req.query.state) q.state = new RegExp(`^${escapeRegex(String(req.query.state))}$`, 'i');
     const list = await CropLot.find(q).sort({ createdAt: -1 });
     res.json({ results: list.map((l) => l.toRead()) });
   })
@@ -136,5 +136,12 @@ router.patch(
     res.json(lot.toRead());
   })
 );
+
+/**
+ * Escape special regex characters.
+ */
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 module.exports = { router };

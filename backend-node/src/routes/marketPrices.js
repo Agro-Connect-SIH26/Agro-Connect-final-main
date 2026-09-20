@@ -280,7 +280,7 @@ router.get(
      */
     if (filters.market) {
       q.market = new RegExp(
-        String(filters.market),
+        escapeRegex(String(filters.market)),
         'i'
       );
     }

@@ -239,6 +239,20 @@ export default function DecisionCard({ cropLotId, compact = false }) {
           </div>
         </div>
       )}
+      {/* ML offline indicator — shown only when the projection service
+          could not produce a result. Keeps the card honest: the user
+          sees why no projection appears rather than an empty gap. */}
+      {!trendAvailable && (
+        <div className="border-t border-earth-200 px-5 py-3 sm:px-6">
+          <p className="text-xs text-ink-400">
+            <span className="mr-1 inline-block h-2 w-2 rounded-full bg-ink-300" />
+            7-day price projection is currently unavailable — the ML service
+            is offline or has insufficient historical data for this crop.
+            The recommendation above is based on current offers and market
+            prices only.
+          </p>
+        </div>
+      )}
 
       {/* BREAK-EVEN — explicit number for the WAIT panel. Lets the
           farmer see exactly what future price would have to clear
@@ -304,6 +318,24 @@ export default function DecisionCard({ cropLotId, compact = false }) {
                   </div>
                 )}
               </dl>
+            )}
+            {/* NHB Cold Chain Guidelines reference — shown when the
+                break-even uses a storage-days assumption. Lets the
+                farmer know these numbers follow a published standard. */}
+            {current.breakeven_assumptions?.storage_days != null && (
+              <p className="mt-2 text-[11px] text-ink-400">
+                Storage cost assumptions follow{' '}
+                <a
+                  href="https://nhb.gov.in/pdf/infrastructure/cold-chain-guidelines.pdf"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="underline decoration-dotted hover:text-ink-600"
+                >
+                  NHB Cold Chain Guidelines
+                </a>
+                . Actual rates may vary — edit your lot's cold-storage settings
+                to improve the estimate.
+              </p>
             )}
           </div>
         )}
