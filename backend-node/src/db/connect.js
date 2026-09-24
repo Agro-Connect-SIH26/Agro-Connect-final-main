@@ -71,18 +71,30 @@ async function disconnectMongo() {
 }
 
 async function pingMongo() {
-  if (mongoose.connection.readyState !== 1) return false;
   try {
-    const admin = mongoose.connection.db.admin();
-    await admin.ping();
-    return true;
+    if (!mongoose.connection || mongoose.connection.readyState !== 1) {
+      return false;
+    }
+    if (mongoose.connection.db && typeof mongoose.connection.db.admin === 'function') {
+      const admin = mongoose.connection.db.admin();
+      await admin.ping();
+      return true;
+    }
+    return mongoose.connection.readyState === 1;
   } catch (_) {
     return false;
   }
 }
 
 function lastErrorMessage() {
-  return lastError ? lastError.message : null;
+  if (lastError && lastError.message) {
+    return lastError.message;
+  }
+  if (mongoose.connection && mongoose.connection.readyState !== 1) {
+    const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+    return `Mongoose connection state: ${states[mongoose.connection.readyState] || 'unknown'}`;
+  }
+  return null;
 }
 
 module.exports = { connectMongo, disconnectMongo, pingMongo, lastErrorMessage };

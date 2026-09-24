@@ -29,6 +29,7 @@ import { useState } from 'react'
 import api from '../api/axios.js'
 import { fmtInr } from '../utils/format.js'
 import { Check, Lock, AlertTriangle, ArrowRight, BadgeCheck, RefreshCcw } from 'lucide-react'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 /* canonical ordered list of states for the rail */
 const RAIL = [
@@ -75,6 +76,8 @@ function nextState(state) {
 }
 
 export default function PaymentLifecycle({ deal, onChange }) {
+  const { t } = useLanguage()
+
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState(null)
   const [txnId, setTxnId] = useState(deal?.last_txn_id || null)
@@ -112,16 +115,13 @@ export default function PaymentLifecycle({ deal, onChange }) {
   return (
     <section className="rounded-card border border-ink-100 bg-white p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="font-display text-base text-ink-900">
-          Payment lifecycle
-        </h3>
-        <span className="ac-chip ac-chip-ink">
-          Current: <strong className="ml-1 text-ink-900">{state}</strong>
+        <h3 className="font-display text-base text-ink-900">{t("Payment lifecycle")}</h3>
+        <span className="ac-chip ac-chip-ink">{t("Current:")}<strong className="ml-1 text-ink-900">{state}</strong>
         </span>
       </div>
 
       {/* State rail */}
-      <ol className="mt-3 grid grid-cols-5 gap-1" aria-label="Payment progress">
+      <ol className="mt-3 grid grid-cols-5 gap-1" aria-label={t("Payment progress")}>
         {RAIL.map((s, i) => {
           const reached = idx >= i
           return (
@@ -173,9 +173,7 @@ export default function PaymentLifecycle({ deal, onChange }) {
             onClick={() => transition('DISPUTED')}
             className="ac-btn-ghost disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <AlertTriangle className="mr-1 inline h-4 w-4" />
-            Open dispute
-          </button>
+            <AlertTriangle className="mr-1 inline h-4 w-4" />{t("Open dispute")}</button>
         )}
         {isDisputed && (
           <>
@@ -185,9 +183,7 @@ export default function PaymentLifecycle({ deal, onChange }) {
               onClick={() => transition('REFUNDED')}
               className="ac-btn-secondary"
             >
-              <RefreshCcw className="mr-1 inline h-4 w-4" />
-              Issue refund
-            </button>
+              <RefreshCcw className="mr-1 inline h-4 w-4" />{t("Issue refund")}</button>
             <button
               type="button"
               disabled={busy}
@@ -200,9 +196,7 @@ export default function PaymentLifecycle({ deal, onChange }) {
         )}
         {isDone && (
           <span className="ac-chip ac-chip-success">
-            <BadgeCheck className="mr-1 inline h-3 w-3" />
-            Deal complete
-          </span>
+            <BadgeCheck className="mr-1 inline h-3 w-3" />{t("Deal complete")}</span>
         )}
       </div>
 

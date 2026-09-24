@@ -15,8 +15,12 @@
  * mirrored) and on the page itself.
  */
 import { Link } from 'react-router-dom'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 export default function PageHeader({ eyebrow, title, description, actions, back }) {
+  const { t } = useLanguage()
+  const renderText = (val) => (typeof val === 'string' ? t(val) : val)
+
   return (
     <div className="mb-6 sm:mb-8">
       {back && (
@@ -27,19 +31,19 @@ export default function PageHeader({ eyebrow, title, description, actions, back 
           <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
             <path d="M15 6l-6 6 6 6" />
           </svg>
-          {back.label || 'Back'}
+          {renderText(back.label || 'Back')}
         </Link>
       )}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0 flex-1">
           {eyebrow && (
-            <p className="ac-section-label mb-1.5">{eyebrow}</p>
+            <p className="ac-section-label mb-1.5">{renderText(eyebrow)}</p>
           )}
           <h1 className="font-display text-3xl font-medium leading-tight text-ink-900 sm:text-4xl">
-            {title}
+            {renderText(title)}
           </h1>
           {description && (
-            <p className="mt-2 max-w-2xl text-base text-ink-500">{description}</p>
+            <p className="mt-2 max-w-2xl text-base text-ink-500">{renderText(description)}</p>
           )}
         </div>
         {actions && (

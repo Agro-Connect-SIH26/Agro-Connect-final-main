@@ -20,8 +20,11 @@ import { useEffect, useState } from 'react'
 import api from '../api/axios.js'
 import CredibilityBadge from './CredibilityBadge.jsx'
 import { ShieldCheck, BadgeCheck, BadgeAlert } from 'lucide-react'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 export default function FarmerCard({ lotPublicId, layout = 'card' }) {
+  const { t } = useLanguage()
+
   const [card, setCard] = useState(null)
   const [status, setStatus] = useState('loading')
   const [err, setErr] = useState(null)
@@ -65,7 +68,7 @@ export default function FarmerCard({ lotPublicId, layout = 'card' }) {
   }
   if (!card.available) {
     return (
-      <p className="mt-2 text-xs text-ink-400">Farmer info not available.</p>
+      <p className="mt-2 text-xs text-ink-400">{t("Farmer info not available.")}</p>
     )
   }
 
@@ -84,9 +87,7 @@ export default function FarmerCard({ lotPublicId, layout = 'card' }) {
           <ShieldCheck className="h-4 w-4 text-primary-600" aria-hidden="true" />
           <span className="font-medium text-ink-800">{f.name}</span>
           {f.is_demo && (
-            <span className="ac-chip ac-chip-ink" title="Seeded sample farmer">
-              sample
-            </span>
+            <span className="ac-chip ac-chip-ink" title={t("Seeded sample farmer")}>{t("sample")}</span>
           )}
         </div>
         {layout === 'card' && <CredibilityBadge credibility={card.credibility} compact />}
@@ -108,8 +109,8 @@ export default function FarmerCard({ lotPublicId, layout = 'card' }) {
         title={
           card.identity_verification_note ||
           (identityVerified
-            ? 'Identity verified'
-            : 'Identity not verified — KYC integration pending')
+            ? t('Identity verified')
+            : t('Identity not verified — KYC integration pending'))
         }
       >
         {identityVerified ? (
@@ -123,18 +124,18 @@ export default function FarmerCard({ lotPublicId, layout = 'card' }) {
           }
         >
           {identityVerified
-            ? 'Identity verified'
-            : 'Identity not verified'}
+            ? t('Identity verified')
+            : t('Identity not verified')}
         </span>
         {!identityVerified && (
-          <span className="text-ink-400"> · KYC integration pending</span>
+          <span className="text-ink-400"> · {t("KYC integration pending")}</span>
         )}
       </p>
 
       {layout === 'row' && <CredibilityBadge credibility={card.credibility} compact />}
       {layout === 'card' && !card.credibility?.available && (
         <p className="mt-1 text-xs text-ink-500">
-          {card.credibility?.message || 'Not enough history yet.'}
+          {card.credibility?.message ? t(card.credibility.message) : t('Not enough history yet.')}
         </p>
       )}
     </div>

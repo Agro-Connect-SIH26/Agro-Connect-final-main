@@ -120,7 +120,9 @@ async function listHistorical({
   if (state) filter.state = new RegExp(`^${String(state).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
   if (market) filter.market = new RegExp(String(market).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
 
-  const rows = await MarketPrice.find(filter).lean();
+  const rows = await MarketPrice.find(filter)
+    .select('priceDate arrivalDate pricePerKg')
+    .lean();
 
   const distinctDates = new Set();
   for (const r of rows) {

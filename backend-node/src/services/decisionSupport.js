@@ -194,12 +194,17 @@ async function computeDecision(lot) {
   const offerCount = offers.length;
   const bestOfferPrice = best ? best.currentPrice : null;
 
-  // Market prices for the same crop
-  const marketRows = await MarketPrice.find({
+  // Market prices for the same crop, filtering out corrupted outliers > 10000 INR/kg
+  // Use .lean() to avoid Mongoose Document OOM on 100k+ records
+  const validMarketRows = await MarketPrice.find({
     cropName: new RegExp(`^${escapeRegex(lot.cropName)}$`, 'i'),
-  });
-  const avgMarketPerKg = marketRows.length
-    ? marketRows.reduce((a, m) => a + (m.pricePerKg || 0), 0) / marketRows.length
+    pricePerKg: { $lte: 10000 }
+  })
+  .select('market state arrivalDate priceDate pricePerKg')
+  .lean();
+
+  const avgMarketPerKg = validMarketRows.length
+    ? validMarketRows.reduce((a, m) => a + (m.pricePerKg || 0), 0) / validMarketRows.length
     : null;
 
   const expected = Number(lot.expectedPricePerKg || avgMarketPerKg || 0);
@@ -218,7 +223,7 @@ async function computeDecision(lot) {
   // above) still uses every row, so the decision rule's reference
   // price is unchanged.
   const distinctByMarket = new Map();
-  for (const m of marketRows) {
+  for (const m of validMarketRows) {
     if (!m || !m.market) continue;
     const key = `${m.state || ''}::${m.market}`;
     const cur = distinctByMarket.get(key);
@@ -261,7 +266,7 @@ async function computeDecision(lot) {
 
   // Insufficient data = no market rows, no expected price, no offers.
   const insufficientData =
-    marketRows.length === 0 && !expected && offerCount === 0;
+    validMarketRows.length === 0 && !expected && offerCount === 0;
 
   // Best per-market net realisation (used by the rule when there
   // are no offers).

@@ -31,6 +31,7 @@ import PageHeader from '../components/PageHeader.jsx'
 import CropImage from '../components/CropImage.jsx'
 import RecommendationHero from '../components/RecommendationHero.jsx'
 import usePageMeta from '../hooks/usePageMeta.js'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 const INPUT =
   'w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500'
@@ -48,37 +49,39 @@ const RECOMMENDATION_LABEL = {
 }
 
 function RecommendationBadge({ rec }) {
+  const { t } = useLanguage()
   const tone = RECOMMENDATION_TONE[rec] || 'bg-ink-100 text-ink-700'
-  const label = RECOMMENDATION_LABEL[rec] || rec
+  const label = t(RECOMMENDATION_LABEL[rec] || rec)
   return (
-    <span className={`inline-block rounded-full px-3 py-1 text-sm font-semibold ${tone}`}>
+    <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider bg-primary-100 text-primary-800 border border-primary-200">
       {label}
     </span>
   )
 }
 
-function sourceLabelForRow(row) {
+function sourceLabelForRow(row, t) {
   if (row.is_routed && row.distance_provider === 'geoapify') {
-    return 'Road distance · Geoapify'
+    return t('Road distance · Geoapify')
   }
   if (row.is_routed && row.distance_provider === 'osrm') {
-    return 'Road distance · OSRM'
+    return t('Road distance · OSRM')
   }
   if (row.origin_kind === 'state' || row.origin_kind === 'district') {
-    return `Estimated (${row.origin_kind}-centroid)`
+    return `${t('Estimated')} (${row.origin_kind}-centroid)`
   }
   if (row.origin_kind === 'geocoded') {
-    return 'Road distance · geocoded'
+    return t('Road distance · geocoded')
   }
-  return 'Estimated (haversine)'
+  return t('Estimated (haversine)')
 }
 
 function DecisionSupport() {
+  const { t } = useLanguage()
   const { publicId } = useParams()
   const dispatch = useDispatch()
   usePageMeta({
-    title: 'Decision support',
-    description: 'Rule-based sell-now / wait / store-then-sell recommendation. Not an AI prediction. Estimate only.',
+    title: t('Decision support'),
+    description: t('Rule-based sell-now / wait / store-then-sell recommendation. Not an AI prediction. Estimate only.'),
   })
   const { currentLot } = useSelector((state) =>
     state.cropLots.currentLot && state.cropLots.currentLot.public_id === publicId
@@ -136,20 +139,20 @@ function DecisionSupport() {
   return (
     <>
       <PageHeader
-        eyebrow={currentLot ? currentLot.crop_name : 'Selling'}
-        title="Decision support"
+        eyebrow={currentLot ? currentLot.crop_name : t('Selling')}
+        title={t("Decision support")}
         subtitle={
           currentLot
-            ? `Rule-based recommendation for ${currentLot.crop_name} · ${currentLot.quantity} ${currentLot.quantity_unit}. Not an AI prediction. Estimate only.`
-            : 'Rule-based recommendation. Not an AI prediction. Estimate only.'
+            ? `${t('Rule-based recommendation for')} ${currentLot.crop_name} · ${currentLot.quantity} ${currentLot.quantity_unit}. ${t('Not an AI prediction. Estimate only.')}`
+            : t('Rule-based recommendation. Not an AI prediction. Estimate only.')
         }
-        back={{ to: `/seller/crop-lots/${publicId}`, label: 'Back to lot' }}
+        back={{ to: `/seller/crop-lots/${publicId}`, label: t('Back to lot') }}
         actions={
           <Link
             to={`/seller/crop-lots/${publicId}/opportunities`}
             className="ac-btn-secondary"
           >
-            Opportunities
+            {t("Opportunities")}
           </Link>
         }
       />
@@ -176,7 +179,7 @@ function DecisionSupport() {
 
       {status === 'loading' && (
         <div className="ac-card p-8 text-center text-sm text-ink-500">
-          Computing decision…
+          {t("Computing decision…")}
         </div>
       )}
       {status === 'failed' && (
@@ -195,150 +198,93 @@ function DecisionSupport() {
 
           <section className="ac-card p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="font-display text-lg text-ink-900">Why this recommendation?</h2>
+              <h2 className="font-display text-lg text-ink-900">{t("Why this recommendation?")}</h2>
               <button
                 onClick={() => dispatch(refreshDecision(current.crop_lot_id))}
                 className="text-sm font-medium text-primary-700 transition hover:text-primary-800"
               >
-                ↻ Recompute
+                ↻ {t("Recompute")}
               </button>
             </div>
             <p className="mt-3 text-sm text-ink-800">{current.reason || NOT_AVAILABLE}</p>
           </section>
 
           {current.comparison?.length > 0 && (
-            <section className="ac-card overflow-hidden p-0">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink-100 bg-earth-50 px-5 py-3">
-                <h2 className="font-display text-lg text-ink-900">
-                  Market comparison
+            <section className="ac-card p-6">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-6">
+                <h2 className="font-display text-lg font-bold text-ink-900">
+                  {t("Market Comparison")}
                 </h2>
                 <span
-                  className="ac-chip ac-chip-ink"
-                  title="Distances use the configured routing provider (Geoapify when the key is set) and fall back to haversine. Logistical costs are rule-based."
+                  className="ac-chip ac-chip-ink text-xs"
+                  title={t("Distances use the configured routing provider... Logistical costs are rule-based.")}
                 >
-                  Distances:{' '}
-                  {current.comparison.some((r) => r.is_routed)
-                    ? 'road (routed)'
-                    : 'estimated'}
+                  {t("Distances")}: {current.comparison.some((r) => r.is_routed) ? t('road (routed)') : t('estimated')}
                 </span>
               </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-ink-100 text-sm">
-                  <thead className="bg-earth-50 text-xs uppercase tracking-wider text-ink-500">
-                    <tr>
-                      <th className="px-4 py-2 text-left">Market</th>
-                      <th className="px-4 py-2 text-left">Price/kg</th>
-                      <th className="px-4 py-2 text-left">Distance · Source</th>
-                      <th className="px-4 py-2 text-left">Vehicle · Rate/km</th>
-                      <th className="px-4 py-2 text-left">Transport</th>
-                      <th className="px-4 py-2 text-left">Logistics</th>
-                      <th className="px-4 py-2 text-left">
-                        Net (you may receive)
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-ink-100">
-                    {current.comparison.map((row, i) => {
-                      const dist = fmtDistanceLabel(row)
-                      const sourceLabel = sourceLabelForRow(row)
-                      return (
-                        <tr
-                          key={i}
-                          className="transition hover:bg-primary-50/40"
-                        >
-                          <td className="px-4 py-2 font-medium text-ink-900">
-                            {row.market || NOT_AVAILABLE}
-                            <div className="text-xs text-ink-500">
-                              {row.state || row.location || ''}
-                            </div>
-                          </td>
-                          <td className="px-4 py-2 text-ink-800">
-                            {fmtPerKg(row.modal_price)}
-                          </td>
-                          <td className="px-4 py-2 text-ink-800">
-                            {dist.text}
-                            {dist.hint ? (
-                              <div className="text-xs text-ink-500">
-                                {dist.hint}
-                              </div>
-                            ) : null}
-                            <div className="mt-0.5 text-xs text-ink-500">
-                              {sourceLabel}
-                            </div>
-                          </td>
-                          <td className="px-4 py-2 text-xs text-ink-700">
-                            {row.vehicle_type ? (
-                              <>
-                                <span className="font-medium text-ink-900">
-                                  {row.vehicle_type}
-                                </span>
-                                <span className="text-ink-500">
-                                  {' '}
-                                  · ₹{fmtInr2(row.vehicle_rate_per_km)}/km
-                                </span>
-                                <div className="text-ink-500">
-                                  × {row.num_vehicles || 1} vehicle
-                                  {(row.num_vehicles || 1) > 1 ? 's' : ''}
-                                </div>
-                              </>
-                            ) : (
-                              <span className="text-ink-400">—</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-2 text-ink-800">
-                            {Number.isFinite(Number(row.transport_cost)) ? (
-                              <span className="font-medium text-ink-900">
-                                {fmtInr(row.transport_cost)}
-                              </span>
-                            ) : (
-                              <span className="text-ink-400">—</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-2 text-ink-800">
-                            {fmtInr(row.total_logistics_cost)}
-                          </td>
-                          <td className="px-4 py-2 font-semibold text-success-700">
-                            {fmtInr(row.net_realisation)}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {current.comparison.map((row, i) => {
+                  const dist = fmtDistanceLabel(row)
+                  return (
+                    <div key={i} className="rounded-2xl border border-earth-200 bg-white p-5 shadow-xs hover:border-primary-300 transition">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <p className="font-bold text-ink-900">{row.market || NOT_AVAILABLE}</p>
+                          <p className="text-xs text-ink-500">{row.state || row.location || ''}</p>
+                        </div>
+                        <p className="text-lg font-black text-ink-900">{fmtPerKg(row.modal_price)}</p>
+                      </div>
+
+                      <div className="space-y-2 text-xs text-ink-600">
+                        <div className="flex justify-between"><span>{t("Distance")}:</span> <span className="font-medium text-ink-900">{dist.text}</span></div>
+                        <div className="flex justify-between"><span>{t("Transport")}:</span> <span className="font-medium text-ink-900">₹{fmtInr(row.transport_cost)}</span></div>
+                        <div className="flex justify-between border-t border-earth-100 pt-2 mt-2">
+                           <span className="font-semibold text-ink-900">{t("Net Realization")}:</span>
+                           <span className="font-bold text-success-700">₹{fmtInr(row.net_realisation)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </section>
           )}
 
-          <section className="ac-card p-5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="font-display text-lg text-ink-900">
-                Cold storage option
-              </h2>
-              <span className="ac-chip ac-chip-ink">
-                Estimate · rule-based
-              </span>
-            </div>
-            <p className="mt-2 text-xs text-honey-900">
-              ⚠ Not a price forecast. Compares sell-now vs store-then-sell
-              using current offers, your expected price, or market average.
-            </p>
-            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <section className="ac-card p-8 border border-primary-100 bg-white">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
               <div>
-                <label className="mb-1 block text-xs font-medium text-ink-700">
-                  Storage days
+                <h2 className="font-display text-2xl font-bold text-ink-900">
+                  {t("Cold Storage Comparison")}
+                </h2>
+                <p className="mt-1 text-sm text-ink-600">
+                  {t("Compare the net realization of selling now versus storing using a cold-storage facility.")}
+                </p>
+                <p className="mt-2 text-xs text-honey-800 font-medium">
+                  {t("⚠ Illustrative comparison only. Prices are based on current estimates.")}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-3 bg-earth-50 rounded-2xl p-6 border border-earth-100">
+              <div>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-ink-600">
+                  {t("Storage Duration")}
                 </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="365"
-                  value={coldDays}
-                  onChange={(e) => setColdDays(e.target.value)}
-                  className={INPUT}
-                />
+                <div className="flex items-center gap-2">
+                   <input
+                    type="number"
+                    min="1"
+                    max="365"
+                    value={coldDays}
+                    onChange={(e) => setColdDays(e.target.value)}
+                    className="w-full rounded-xl border border-earth-200 bg-white px-4 py-3 text-sm shadow-xs focus:ring-2 focus:ring-primary-200"
+                  />
+                  <span className="text-sm font-medium text-ink-600">{t("days")}</span>
+                </div>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-ink-700">
-                  Rate ₹/kg/day
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-ink-600">
+                  {t("Rate (₹/kg/day)")}
                 </label>
                 <input
                   type="number"
@@ -346,109 +292,68 @@ function DecisionSupport() {
                   step="0.01"
                   value={coldRate}
                   onChange={(e) => setColdRate(e.target.value)}
-                  className={INPUT}
+                  className="w-full rounded-xl border border-earth-200 bg-white px-4 py-3 text-sm shadow-xs focus:ring-2 focus:ring-primary-200"
                 />
               </div>
               <div className="flex items-end">
                 <button
                   onClick={runColdEstimate}
                   disabled={coldLoading}
-                  className="ac-btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full rounded-xl bg-primary-700 py-3 text-sm font-bold text-white transition hover:bg-primary-800 shadow-sm disabled:opacity-50"
                 >
-                  {coldLoading ? 'Computing…' : 'Compare'}
+                  {coldLoading ? t('Computing…') : t('Compare Scenarios')}
                 </button>
               </div>
             </div>
+
             {coldError && (
-              <p className="mt-2 text-sm text-rust-700">{coldError}</p>
+              <p className="mt-4 text-sm text-rust-700 font-medium">{coldError}</p>
             )}
+
             {coldEstimate && (
-              <div className="mt-4 rounded-card border border-ink-100 bg-earth-50 p-4">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                      Amount if you sell now
+              <div className="mt-8 rounded-2xl border border-primary-200 bg-primary-50/50 p-6">
+                <div className="grid gap-8 sm:grid-cols-2">
+                  <div className="p-4 bg-white rounded-xl shadow-xs border border-primary-100">
+                    <p className="text-xs font-bold uppercase tracking-wider text-ink-500 mb-2">
+                      {t("Sell Now")}
                     </p>
-                    <p className="mt-1 font-display text-lg text-ink-900">
+                    <p className="font-display text-3xl font-black text-ink-900">
                       {fmtInr(coldEstimate.sell_now_value)}
                     </p>
-                    <p className="text-xs text-ink-500">
+                    <p className="text-xs font-medium text-ink-600 mt-1">
                       @ {fmtPerKg(coldEstimate.sell_now_price_per_kg)}
                     </p>
                   </div>
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                      Amount if you store then sell
+                  <div className="p-4 bg-white rounded-xl shadow-xs border border-success-200">
+                    <p className="text-xs font-bold uppercase tracking-wider text-success-800 mb-2">
+                      {t("Store then Sell")}
                     </p>
-                    <p className="mt-1 font-display text-lg text-ink-900">
+                    <p className="font-display text-3xl font-black text-success-700">
                       {fmtInr(coldEstimate.net_store_then_sell)}
                     </p>
-                    <p className="text-xs text-ink-500">
+                    <p className="text-xs font-medium text-ink-600 mt-1">
                       @ {fmtPerKg(coldEstimate.store_then_sell_price_per_kg)}
                     </p>
                   </div>
                 </div>
-                <div className="mt-3 grid gap-2 text-xs text-ink-600 sm:grid-cols-3">
-                  <div>Storage cost: {fmtInr(coldEstimate.storage_cost)}</div>
-                  <div>Wastage: {fmtInr(coldEstimate.wastage_value)}</div>
-                  <div>
-                    Δ vs sell now: {fmtInr(coldEstimate.delta_vs_sell_now)}
-                  </div>
+
+                <div className="mt-6 flex flex-wrap gap-4 text-xs font-medium text-ink-700 bg-white p-4 rounded-xl border border-earth-100">
+                  <div>{t("Storage cost")}: <span className="font-bold text-ink-900">{fmtInr(coldEstimate.storage_cost)}</span></div>
+                  <div>{t("Wastage")}: <span className="font-bold text-ink-900">{fmtInr(coldEstimate.wastage_value)}</span></div>
+                  <div>{t("Net Advantage")}: <span className="font-bold text-primary-800">{fmtInr(coldEstimate.delta_vs_sell_now)}</span></div>
                 </div>
-                <div className="mt-3 rounded-card border border-ink-200 bg-white p-3">
-                  <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                    Recommendation
+
+                <div className="mt-6 rounded-xl border border-primary-200 bg-white p-5">
+                  <p className="text-xs font-bold uppercase tracking-wider text-primary-900 mb-2">
+                    {t("Recommendation")}
                   </p>
-                  <p
-                    className={`mt-1 text-sm font-semibold ${
-                      coldEstimate.recommendation === 'STORE_THEN_SELL'
-                        ? 'text-primary-700'
-                        : coldEstimate.recommendation === 'SELL_NOW'
-                        ? 'text-success-700'
-                        : 'text-honey-800'
-                    }`}
-                  >
+                  <p className="font-bold text-lg text-primary-800">
                     {coldEstimate.recommendation || 'NEUTRAL'}
                   </p>
-                  <p className="mt-1 text-xs text-ink-600">
+                  <p className="mt-2 text-sm text-ink-700 leading-relaxed">
                     {coldEstimate.rationale || NOT_AVAILABLE}
                   </p>
-                  <p className="mt-1 text-xs text-ink-500">
-                    Breakeven post-storage price:{' '}
-                    {fmtPerKg(coldEstimate.breakeven_price_per_kg)}
-                  </p>
                 </div>
-              </div>
-            )}
-
-            {logisticsConfig && logisticsConfig.nhb_scheme && (
-              <div className="mt-3 border-t border-ink-100 pt-3 text-xs text-ink-500">
-                <p>
-                  <span className="font-medium text-ink-700">
-                    Cold storage:
-                  </span>{' '}
-                  scheme reference — {logisticsConfig.nhb_scheme.name}
-                  {logisticsConfig.nhb_scheme.citation_url ? (
-                    <>
-                      {' '}
-                      (
-                      <a
-                        href={logisticsConfig.nhb_scheme.citation_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary-700 hover:underline"
-                      >
-                        {logisticsConfig.nhb_scheme.citation_url.replace(
-                          /^https?:\/\//,
-                          ''
-                        )}
-                      </a>
-                      ).
-                    </>
-                  ) : null}
-                  {' '}The estimate above uses the user-supplied rate and is
-                  NOT a current NHB tariff.
-                </p>
               </div>
             )}
           </section>
@@ -458,7 +363,7 @@ function DecisionSupport() {
               to={`/seller/crop-lots/${publicId}/buyers`}
               className="text-sm font-medium text-primary-700 transition hover:text-primary-800"
             >
-              See matched buyers →
+              {t("See matched buyers →")}
             </Link>
           </div>
         </div>

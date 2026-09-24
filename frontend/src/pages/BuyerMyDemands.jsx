@@ -27,6 +27,7 @@ import {
 import PageHeader from '../components/PageHeader.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import usePageMeta from '../hooks/usePageMeta.js'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 function safeArray(v) {
   if (Array.isArray(v)) return v
@@ -47,18 +48,20 @@ const STATUS_LABEL = {
 }
 
 function StatusBadge({ status }) {
+  const { t } = useLanguage()
   return (
     <span
       className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
         STATUS_TONE[status] || 'bg-ink-100 text-ink-700'
       }`}
     >
-      {STATUS_LABEL[status] || status}
+      {t(STATUS_LABEL[status] || status)}
     </span>
   )
 }
 
 function FilterPill({ value, current, onClick }) {
+  const { t } = useLanguage()
   const active = value === current
   return (
     <button
@@ -69,17 +72,18 @@ function FilterPill({ value, current, onClick }) {
           : 'border border-primary-200 bg-white text-primary-700 hover:bg-primary-50'
       }`}
     >
-      {value === 'ALL' ? 'All' : STATUS_LABEL[value] || value}
+      {value === 'ALL' ? t('All') : t(STATUS_LABEL[value] || value)}
     </button>
   )
 }
 
 function BuyerMyDemands() {
+  const { t } = useLanguage()
   const dispatch = useDispatch()
   const isBuyer = useSelector(selectIsBuyer)
   usePageMeta({
-    title: 'My demands',
-    description: 'See every demand you have created, with offer counts and fill progress.',
+    title: t('My demands'),
+    description: t('See every demand you have created, with offer counts and fill progress.'),
   })
   const activeBuyer = useSelector(selectActiveBuyer)
   const userPublicId = useSelector(selectPublicId)
@@ -120,13 +124,13 @@ function BuyerMyDemands() {
   return (
     <>
       <PageHeader
-        eyebrow="Buying"
-        title="My Demands"
-        description="All demands you have created. Open one to see farmer offers and Accept, Counter, or Reject."
-        back={{ to: '/buyer', label: 'Dashboard' }}
+        eyebrow={t("Buying")}
+        title={t("My Demands")}
+        description={t("All demands you have created. Open one to see farmer offers and Accept, Counter, or Reject.")}
+        back={{ to: '/buyer', label: t('Dashboard') }}
         actions={
           <Link to="/buyer/demands/new" className="ac-btn-primary">
-            + New Demand
+            + {t("New Demand")}
           </Link>
         }
       />
@@ -144,7 +148,7 @@ function BuyerMyDemands() {
 
       {rfqListStatus === 'loading' && (
         <div className="ac-card p-8 text-center text-sm text-ink-500">
-          Loading…
+          {t("Loading…")}
         </div>
       )}
       {rfqListError && (
@@ -156,11 +160,11 @@ function BuyerMyDemands() {
       {rfqListStatus === 'succeeded' && demands.length === 0 && (
         <EmptyState
           kind="empty"
-          title="No demands yet"
-          description="Tell farmers what you want to buy and they'll see your demand on the marketplace. Create your first demand to get started."
+          title={t("No demands yet")}
+          description={t("Tell farmers what you want to buy and they'll see your demand on the marketplace. Create your first demand to get started.")}
           action={
             <Link to="/buyer/demands/new" className="ac-btn-primary">
-              Create your first demand
+              {t("Create your first demand")}
             </Link>
           }
         />
@@ -198,8 +202,8 @@ function BuyerMyDemands() {
                         {d.location || '—'}
                         {d.state ? `, ${d.state}` : ''} ·{' '}
                         {d.required_date
-                          ? `by ${d.required_date}`
-                          : 'no deadline'}
+                          ? `${t('by')} ${d.required_date}`
+                          : t('no deadline')}
                       </p>
                     </div>
                     <StatusBadge status={d.status} />
@@ -208,23 +212,23 @@ function BuyerMyDemands() {
                   <dl className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
                     <div>
                       <dt className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                        Required
+                        {t("Required")}
                       </dt>
                       <dd className="mt-0.5 font-display text-base text-ink-900">
-                        {d.quantity_kg} kg
+                        {d.quantity_kg} {t("kg")}
                       </dd>
                     </div>
                     <div>
                       <dt className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                        Filled
+                        {t("Filled")}
                       </dt>
                       <dd className="mt-0.5 font-display text-base text-success-700">
-                        {d.filled_quantity_kg} kg ({pct}%)
+                        {d.filled_quantity_kg} {t("kg")} ({pct}%)
                       </dd>
                     </div>
                     <div>
                       <dt className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                        Max ₹/kg
+                        {t("Max ₹/kg")}
                       </dt>
                       <dd className="mt-0.5 font-display text-base text-ink-900">
                         {d.max_price_per_kg != null
@@ -234,7 +238,7 @@ function BuyerMyDemands() {
                     </div>
                     <div>
                       <dt className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                        Offers
+                        {t("Offers")}
                       </dt>
                       <dd className="mt-0.5 font-display text-base text-ink-900">
                         {Number(d.offer_count || 0)}

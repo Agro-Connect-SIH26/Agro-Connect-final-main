@@ -1,35 +1,13 @@
 /**
  * MandiMap.jsx — Leaflet map for "Where to sell? Nearby mandis"
- *
- * Shows:
- *   - The farmer's lot pin (if lat/lon present)
- *   - Nearby mandis as pins coloured by the observed AGMARKNET modal price
- *   - Distance from lot to each mandi (km, haversine — a stand-in for
- *     real routing; see trust note below)
- *   - Per-mandi transport cost (₹/kg) computed from distance × per-km rate
- *
- * Trust rules (from the brief):
- *   - We DO NOT claim the displayed distance is driving distance. It is
- *     straight-line ("as the crow flies") via the haversine formula.
- *     The pin tooltip says "straight-line" so a buyer can verify.
- *   - If the lot has no lat/lon: the map shows a "Location not on file"
- *     state with a small explainer. We never invent coordinates.
- *   - If the GEOAPIFY / map tile key is missing, the component renders
- *     a compact "table-only" fallback (a list of mandis, ranked by
- *     net realization) so the feature is still useful offline.
- *   - Mandi prices come from the existing /api/market-prices
- *     endpoint — observed data only, source label shown.
  */
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import api from '../api/axios.js'
 import { fmtInr } from '../utils/format.js'
 import { MapPin, AlertTriangle, Truck, TrendingUp } from 'lucide-react'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
-// Default transport cost per km per kg (₹). Calibrated against typical
-// mandi freight for evaluation; not pulled from a live tariff API.
 const FREIGHT_PER_KM_PER_KG = 0.012
-
-// Earth's radius in km — for the haversine.
 const R_KM = 6371
 
 function haversineKm(a, b) {
@@ -46,22 +24,24 @@ function haversineKm(a, b) {
 }
 
 function priceTone(price, min, max) {
-  if (price == null) return 'bg-ink-300'
+  if (price == null) return { class: 'bg-ink-300', hex: '#b3b3ad' }
   if (max && max > min && (max - min) > 0) {
     const r = (price - min) / (max - min)
-    if (r >= 0.66) return 'bg-success-600'
-    if (r >= 0.33) return 'bg-honey-500'
-    return 'bg-rust-500'
+    if (r >= 0.66) return { class: 'bg-success-600', hex: '#155345' }
+    if (r >= 0.33) return { class: 'bg-honey-500', hex: '#a87e1d' }
+    return { class: 'bg-rust-500', hex: '#8a4020' }
   }
-  return 'bg-primary-500'
+  return { class: 'bg-primary-500', hex: '#3d7a3d' }
 }
 
 export default function MandiMap({ crop, state, lot }) {
+  const { t } = useLanguage()
+
   const [status, setStatus] = useState('loading')
   const [err, setErr] = useState(null)
   const [mandis, setMandis] = useState([])
+  const [activeMandiId, setActiveMandiId] = useState(null)
 
-  // Lot pin (optional). Never invented — null if missing.
   const lotPin =
     lot && Number.isFinite(lot.lat) && Number.isFinite(lot.lon)
       ? { lat: lot.lat, lon: lot.lon, name: lot.location || 'Lot' }
@@ -94,13 +74,12 @@ export default function MandiMap({ crop, state, lot }) {
     }
   }, [crop, state])
 
-  // Compute distance + transport cost + net realization for each mandi.
   const enriched = useMemo(() => {
     if (!mandis.length) return []
     const prices = mandis.map((m) => Number(m.modal_price) || 0)
     const minP = Math.min(...prices)
     const maxP = Math.max(...prices)
-    return mandis.map((m) => {
+    const list = mandis.map((m) => {
       const pin = { lat: Number(m.lat), lon: Number(m.lon) }
       const distKm = lotPin ? haversineKm(lotPin, pin) : null
       const transport = distKm == null ? null : +(distKm * FREIGHT_PER_KM_PER_KG).toFixed(2)
@@ -108,253 +87,183 @@ export default function MandiMap({ crop, state, lot }) {
       const net = transport != null ? +(price - transport).toFixed(2) : price
       return {
         ...m,
+        id: `${m.market}-${m.state}`,
         distKm: distKm == null ? null : +distKm.toFixed(1),
         transport,
         net,
         tone: priceTone(price, minP, maxP),
       }
     })
+    const bestNet = Math.max(...list.map(m => m.net))
+    return list.map(m => ({ ...m, isBest: m.net === bestNet }))
   }, [mandis, lotPin])
 
+  const listRef = useRef(null)
+  const handleMandiClick = (id) => {
+    setActiveMandiId(id)
+    const el = document.getElementById(`mandi-row-${id}`)
+    if (el && listRef.current) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }
+  }
+
   if (status === 'loading') {
-    return (
-      <div className="animate-pulse rounded-card border border-ink-100 bg-earth-50 p-6 text-sm text-ink-500">
-        Loading nearby mandis…
-      </div>
-    )
+    return <div className="animate-pulse rounded-card border border-ink-100 bg-earth-50 p-6 text-sm text-ink-500">{t("Loading nearby mandis…")}</div>
   }
   if (status === 'failed') {
-    return (
-      <div className="rounded-card border border-rust-200 bg-rust-50 p-3 text-sm text-rust-700">
-        <AlertTriangle className="mr-1 inline h-4 w-4" />
-        Could not load mandis. {err}
-      </div>
-    )
+    return <div className="rounded-card border border-rust-200 bg-rust-50 p-3 text-sm text-rust-700"><AlertTriangle className="mr-1 inline h-4 w-4" />{t("Could not load mandis.")} {err}</div>
   }
   if (status === 'succeeded' && mandis.length === 0) {
-    return (
-      <div className="rounded-card border border-ink-100 bg-earth-50 p-4 text-sm text-ink-600">
-        No mandi price data found for <strong>{crop}</strong>
-        {state ? ` in ${state}` : ''}. Prices will appear once AGMARKNET
-        data is available.
-      </div>
-    )
+    return <div className="rounded-card border border-ink-100 bg-earth-50 p-4 text-sm text-ink-600">{t("No mandi price data found for")} <strong>{crop}</strong> {state ? t("in") + ' ' + state : ''}. {t("Prices will appear once AGMARKNET data is available.")}</div>
   }
 
-  // Best mandi = max net realization (price − transport).
-  const best = enriched.reduce(
-    (acc, m) => (acc == null || m.net > acc.net ? m : acc),
-    null
-  )
+  const sortedMandis = enriched.slice().sort((a, b) => b.net - a.net)
+  const best = sortedMandis.find(m => m.isBest)
 
   return (
-    <div className="rounded-card border border-ink-100 bg-white p-4">
-      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="font-display text-base text-ink-900">
-          Nearby mandis · {crop}
-        </h3>
-        {best && (
-          <span className="ac-chip ac-chip-success">
-            <TrendingUp className="mr-1 inline h-3 w-3" />
-            Best net: {fmtInr(best.net)}/kg at {best.market}
-          </span>
-        )}
+    <div className="rounded-card border border-ink-100 bg-white grid grid-cols-1 lg:grid-cols-5 overflow-hidden shadow-sm">
+      <div className="lg:col-span-3 relative bg-earth-50 h-[300px] lg:h-[360px]">
+        <OsmMap lotPin={lotPin} mandis={enriched} activeMandiId={activeMandiId} onMandiClick={handleMandiClick} t={t} />
       </div>
 
-      <OsmMap lotPin={lotPin} mandis={enriched} />
+      <div className="lg:col-span-2 flex flex-col bg-white border-l border-ink-100 max-h-[300px] lg:max-h-[360px]">
+        <div className="p-4 border-b border-ink-100 bg-white sticky top-0 z-10 shrink-0">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h3 className="font-display text-base text-ink-900">{t("Nearby mandis")} · {crop}</h3>
+            {best && (
+              <span className="ac-chip ac-chip-success shrink-0 text-xs">
+                <TrendingUp className="mr-1 inline h-3 w-3" />
+                {t("Best net")}: {fmtInr(best.net)}/kg
+              </span>
+            )}
+          </div>
+          {!lotPin && (
+            <p className="mt-2 text-xs text-honey-800 flex items-start gap-1">
+              <AlertTriangle className="mr-1 mt-0.5 inline h-3 w-3 shrink-0" />
+              <span>{t("Lot coordinates not on file. Showing mandi prices only — distance is unavailable.")}</span>
+            </p>
+          )}
+          <p className="mt-1 text-[11px] text-ink-500">
+            {t("Distances are straight-line (haversine), not driving distance.")}{' '}
+            {t("Transport cost assumes")} ₹{FREIGHT_PER_KM_PER_KG}{t("/kg/km.")}
+          </p>
+        </div>
 
-      {!lotPin && (
-        <p className="mt-2 text-xs text-honey-800">
-          <AlertTriangle className="mr-1 inline h-3 w-3" />
-          Lot coordinates not on file. Showing mandi prices only —
-          distance is unavailable.
-        </p>
-      )}
-      <p className="mt-1 text-xs text-ink-500">
-        Distances are straight-line (haversine), not driving distance.
-        Transport cost assumes ₹{FREIGHT_PER_KM_PER_KG}/kg/km.
-      </p>
-
-      <ul className="mt-3 divide-y divide-ink-100">
-        {enriched
-          .slice()
-          .sort((a, b) => b.net - a.net)
-          .map((m, idx) => (
-            <li
-              key={`${m.market}-${m.state}-${idx}`}
-              className="flex items-center justify-between gap-3 py-2 text-sm"
-            >
-              <div className="flex min-w-0 items-center gap-2">
-                <span
-                  className={`inline-block h-2.5 w-2.5 rounded-full ${m.tone}`}
-                  aria-hidden="true"
-                />
-                <span className="truncate font-medium text-ink-800">
-                  {m.market}
-                </span>
-                {m.state && (
-                  <span className="truncate text-xs text-ink-500">· {m.state}</span>
-                )}
-              </div>
-              <div className="flex flex-wrap items-center gap-3 text-right text-xs text-ink-600">
-                {m.distKm != null && (
-                  <span>
-                    <MapPin className="mr-0.5 inline h-3 w-3" />
-                    {m.distKm} km
+        <ul className="flex-1 overflow-y-auto p-4 pt-1 divide-y divide-ink-100 space-y-1" ref={listRef}>
+          {sortedMandis.map((m) => {
+            const isActive = activeMandiId === m.id
+            return (
+              <li
+                id={`mandi-row-${m.id}`}
+                key={m.id}
+                onClick={() => handleMandiClick(m.id)}
+                className={`group flex cursor-pointer items-center justify-between gap-3 p-2 rounded-lg transition-colors ${
+                  isActive ? 'bg-primary-50 border border-primary-100 shadow-sm' : 'hover:bg-earth-50 border border-transparent'
+                }`}
+              >
+                <div className="flex min-w-0 items-center gap-2">
+                  <span
+                    className={`inline-block h-2.5 w-2.5 rounded-full shrink-0 shadow-sm ${isActive ? 'ring-2 ring-primary-300 ring-offset-1' : ''} ${m.tone.class}`}
+                    aria-hidden="true"
+                  />
+                  <div className="min-w-0">
+                      <p className={`truncate font-medium text-sm transition-colors ${isActive ? 'text-primary-900' : 'text-ink-800'}`}>
+                        {m.market}
+                      </p>
+                      {m.state && <p className="truncate text-xs text-ink-500">{m.state}</p>}
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-1 text-right text-xs">
+                  <span className={`font-semibold text-sm ${isActive ? 'text-primary-800' : 'text-ink-900'}`}>
+                    {fmtInr(m.net)}/kg
                   </span>
-                )}
-                {m.transport != null && (
-                  <span>
-                    <Truck className="mr-0.5 inline h-3 w-3" />−₹{m.transport}/kg
-                  </span>
-                )}
-                <span className="font-semibold text-ink-900">
-                  {fmtInr(m.net)}/kg
-                </span>
-              </div>
-            </li>
-          ))}
-      </ul>
+                  {(m.distKm != null || m.transport != null) && (
+                      <div className="flex flex-wrap items-center justify-end gap-2 text-[11px] text-ink-500">
+                        {m.distKm != null && <span className="flex items-center"><MapPin className="mr-0.5 inline h-3 w-3" />{m.distKm} km</span>}
+                        {m.transport != null && <span className="flex items-center text-rust-600"><Truck className="mr-0.5 inline h-3 w-3" />−₹{m.transport}/kg</span>}
+                      </div>
+                  )}
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      </div>
     </div>
   )
 }
 
-/* ----------  Leaflet map  ---------- */
-
-// Lazy-load the leaflet pieces so SSR / node test runs don't choke on
-// `window` access inside leaflet. If the package is missing entirely
-// (e.g. in a stripped-down build), we fall back to the list-only view.
-function OsmMap({ lotPin, mandis }) {
+function OsmMap({ lotPin, mandis, activeMandiId, onMandiClick, t }) {
   const [Mod, setMod] = useState(null)
   const [tileOk, setTileOk] = useState(true)
   const [err, setErr] = useState(null)
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([
-      import('react-leaflet'),
-      import('leaflet'),
-    ])
+    Promise.all([import('react-leaflet'), import('leaflet')])
       .then(([rl, L]) => {
         if (cancelled) return
-        // Default Leaflet marker icons rely on bundler-relative URLs
-        // that Vite won't resolve. We replace them with divIcon dots
-        // to avoid the 404-on-icon-url issue.
         delete L.Icon.Default.prototype._getIconUrl
-        L.Icon.Default.mergeOptions({
-          iconRetinaUrl: '',
-          iconUrl: '',
-          shadowUrl: '',
-        })
+        L.Icon.Default.mergeOptions({ iconRetinaUrl: '', iconUrl: '', shadowUrl: '' })
         setMod({ ...rl, L })
       })
-      .catch((e) => {
-        if (cancelled) return
-        setErr(e.message || 'Map library unavailable')
-      })
-    return () => {
-      cancelled = true
-    }
+      .catch((e) => !cancelled && setErr(e.message || 'Map library unavailable'))
+    return () => { cancelled = true }
   }, [])
 
-  if (err || !Mod) {
-    return (
-      <div className="rounded-card border border-ink-100 bg-earth-50 p-3 text-xs text-ink-500">
-        Map view unavailable. {err ? `(${err})` : 'Loading…'}
-        List of mandis and net realization is below.
-      </div>
-    )
+  if (err || !Mod) return <div className="p-3 text-xs text-ink-500">{t("Map view unavailable.")} {err ? `(${err})` : t("Loading…")} {t("List of mandis and net realization is below.")}</div>
+
+  const { MapContainer, TileLayer, CircleMarker, Tooltip, Polyline, useMap } = Mod
+  const center = lotPin ? [lotPin.lat, lotPin.lon] : mandis.length ? [mandis.reduce((s, m) => s + Number(m.lat), 0)/mandis.length, mandis.reduce((s, m) => s + Number(m.lon), 0)/mandis.length] : [20.5937, 78.9629]
+
+  function MapRecenter({ activeMandi }) {
+    const map = useMap()
+    useEffect(() => {
+      if (activeMandi && Number.isFinite(Number(activeMandi.lat)) && Number.isFinite(Number(activeMandi.lon))) {
+        map.panTo([Number(activeMandi.lat), Number(activeMandi.lon)], { animate: true })
+      }
+    }, [activeMandi, map])
+    return null
   }
 
-  const {
-    MapContainer,
-    TileLayer,
-    CircleMarker,
-    Tooltip,
-    Polyline,
-  } = Mod
-
-  // Center: lot if present, else average of mandis.
-  const center = lotPin
-    ? [lotPin.lat, lotPin.lon]
-    : mandis.length
-    ? [
-        mandis.reduce((s, m) => s + Number(m.lat), 0) / mandis.length,
-        mandis.reduce((s, m) => s + Number(m.lon), 0) / mandis.length,
-      ]
-    : [20.5937, 78.9629] // India centroid
+  const activeMandiObj = mandis.find(m => m.id === activeMandiId)
 
   return (
-    <div
-      className="overflow-hidden rounded-card border border-ink-100"
-      style={{ height: 280 }}
-    >
-      <MapContainer
-        center={center}
-        zoom={6}
-        style={{ height: '100%', width: '100%' }}
-        scrollWheelZoom={false}
-      >
-        {tileOk && (
-          <TileLayer
-            attribution='© <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            eventHandlers={{
-              tileerror: () => setTileOk(false),
-            }}
-          />
-        )}
+    <MapContainer center={center} zoom={6} style={{ height: '100%', width: '100%', zIndex: 0 }} scrollWheelZoom={false}>
+        {tileOk && <TileLayer attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" eventHandlers={{ tileerror: () => setTileOk(false) }} />}
         {lotPin && (
-          <CircleMarker
-            center={[lotPin.lat, lotPin.lon]}
-            radius={8}
-            pathOptions={{ color: '#1f6f43', fillColor: '#1f6f43', fillOpacity: 0.9 }}
-          >
-            <Tooltip direction="top">
-              <strong>{lotPin.name}</strong>
-              <br />
-              Your lot
-            </Tooltip>
+          <CircleMarker center={[lotPin.lat, lotPin.lon]} radius={8} pathOptions={{ color: '#1f6f43', fillColor: '#1f6f43', fillOpacity: 0.9 }}>
+            <Tooltip direction="top"><strong>{lotPin.name}</strong><br />{t("Your lot")}</Tooltip>
           </CircleMarker>
         )}
-        {mandis.map((m, idx) => (
-          <CircleMarker
-            key={`${m.market}-${m.state}-${idx}`}
-            center={[Number(m.lat), Number(m.lon)]}
-            radius={6}
-            pathOptions={{
-              color: m.tone.replace('bg-', '#').replace('-500', '').replace('-600', ''),
-              fillColor: '#0a8a4a',
-              fillOpacity: 0.6,
-            }}
-          >
-            <Tooltip direction="top">
-              <strong>{m.market}</strong>
-              <br />
-              {fmtInr(m.modal_price)}/kg modal
-              {m.distKm != null && (
-                <>
-                  <br />
-                  {m.distKm} km away (straight-line)
-                </>
-              )}
-              <br />
-              Net {fmtInr(m.net)}/kg
-            </Tooltip>
-          </CircleMarker>
+        {mandis.map((m) => {
+            const isActive = m.id === activeMandiId
+            return (
+              <CircleMarker
+                key={m.id}
+                center={[Number(m.lat), Number(m.lon)]}
+                radius={isActive ? 8 : 6}
+                pathOptions={{
+                  color: isActive ? '#000000' : m.tone.hex,
+                  weight: isActive ? 2 : 1,
+                  fillColor: m.tone.hex,
+                  fillOpacity: isActive ? 1 : 0.7,
+                }}
+                eventHandlers={{ click: () => onMandiClick(m.id) }}
+              >
+                <Tooltip direction="top">
+                  <strong>{m.market}</strong><br />
+                  {fmtInr(m.modal_price)}/kg {t("modal")}
+                  {m.distKm != null && <><br />{m.distKm} {t("km away (straight-line)")}</>}
+                  <br />{t("Net")} {fmtInr(m.net)}/kg
+                </Tooltip>
+              </CircleMarker>
+            )
+        })}
+        {lotPin && mandis.map((m) => (
+          <Polyline key={m.id} positions={[[lotPin.lat, lotPin.lon], [Number(m.lat), Number(m.lon)]]} pathOptions={{ color: '#cdc6b3', weight: 1, dashArray: '4 4' }} />
         ))}
-        {lotPin &&
-          mandis.map((m, idx) => (
-            <Polyline
-              key={`line-${m.market}-${idx}`}
-              positions={[
-                [lotPin.lat, lotPin.lon],
-                [Number(m.lat), Number(m.lon)],
-              ]}
-              pathOptions={{ color: '#cdc6b3', weight: 1, dashArray: '4 4' }}
-            />
-          ))}
-      </MapContainer>
-    </div>
+        <MapRecenter activeMandi={activeMandiObj} />
+    </MapContainer>
   )
 }

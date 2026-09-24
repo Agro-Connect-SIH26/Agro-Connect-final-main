@@ -1,12 +1,15 @@
 /**
- * CreateCropLot.jsx — list a new crop lot.
+ * pages/CreateCropLot.jsx — The Smart Sell Wizard.
  *
- * Mounted at /seller/crop-lots/new (and the legacy /farmer/create).
- * The business logic — form state, validation, dispatch, redirect
- * to the new lot's detail page — is preserved verbatim. The chrome
- * is the redesigned application shell: a PageHeader, a clean
- * form laid out on design-system tokens, and a single
- * primary action.
+ * Re-architected as a 5-step guided wizard:
+ * 1. Crop Selection (Crop + Variety)
+ * 2. Quantity & Unit
+ * 3. Harvest Timing
+ * 4. Farm Location
+ * 5. Quality, Price & Storage
+ *
+ * Submits to POST /api/crop-lots. Upon success, navigates to the lot's
+ * detail page, where the farmer can then run Decision Support analysis.
  */
 import { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
@@ -15,20 +18,31 @@ import { createCropLot, clearCreateState } from '../redux/slices/cropLotSlice.js
 import PageHeader from '../components/PageHeader.jsx'
 import CropImage from '../components/CropImage.jsx'
 import usePageMeta from '../hooks/usePageMeta.js'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 const FIELD =
-  'mt-1 block w-full rounded-lg border border-ink-200 bg-white px-3.5 py-2.5 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500'
-const FIELD_ERROR = 'border-rust-300 focus:border-rust-500 focus:ring-rust-500'
+  'mt-1 block w-full rounded-xl border border-earth-200 bg-white px-4 py-3 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500'
+
+function WizardStep({ title, subtitle, children }) {
+  return (
+    <div className="animate-fade-in">
+      <h2 className="text-xl font-bold text-ink-900">{title}</h2>
+      <p className="mt-1 text-sm text-ink-600">{subtitle}</p>
+      <div className="mt-6 space-y-4">{children}</div>
+    </div>
+  )
+}
 
 function CreateCropLot() {
+  const { t } = useLanguage()
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const { createStatus, createError, createdLot } = useSelector(
-    (state) => state.cropLots
-  )
+  const { createStatus, createError, createdLot } = useSelector((state) => state.cropLots)
+  const [step, setStep] = useState(1)
+
   usePageMeta({
-    title: 'List a crop lot',
-    description: 'Tell buyers about your crop — quantity, location, harvest date, and the price you want.',
+    title: t('Smart Sell Wizard'),
+    description: t('List your crop in 5 simple steps.'),
   })
 
   const [formData, setFormData] = useState({
@@ -44,53 +58,12 @@ function CreateCropLot() {
     price_currency: 'INR',
   })
 
-  const [errors, setErrors] = useState({})
-
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: null }))
-    }
   }
 
-  const validateForm = () => {
-    const newErrors = {}
-
-    if (!formData.crop_name.trim()) newErrors.crop_name = 'Crop name is required'
-    if (!formData.crop_variety.trim()) newErrors.crop_variety = 'Crop variety is required'
-
-    const qty = parseFloat(formData.quantity)
-    if (!formData.quantity || isNaN(qty) || qty <= 0) {
-      newErrors.quantity = 'Quantity must be a positive number'
-    }
-    if (!formData.harvest_date) {
-      newErrors.harvest_date = 'Harvest date is required'
-    }
-    if (!formData.location.trim()) {
-      newErrors.location = 'Location is required'
-    }
-    if (formData.preferred_selling_radius_km) {
-      const radius = parseFloat(formData.preferred_selling_radius_km)
-      if (isNaN(radius) || radius < 0) {
-        newErrors.preferred_selling_radius_km = 'Radius must be 0 or greater'
-      }
-    }
-    if (formData.minimum_acceptable_price) {
-      const price = parseFloat(formData.minimum_acceptable_price)
-      if (isNaN(price) || price < 0) {
-        newErrors.minimum_acceptable_price = 'Price must be 0 or greater'
-      }
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!validateForm()) return
-
+  const handleSubmit = async () => {
     const payload = {
       crop_name: formData.crop_name.trim(),
       crop_variety: formData.crop_variety.trim(),
@@ -99,338 +72,100 @@ function CreateCropLot() {
       harvest_date: formData.harvest_date,
       location: formData.location.trim(),
       price_currency: formData.price_currency,
-    }
-    if (formData.preferred_selling_radius_km) {
-      payload.preferred_selling_radius_km = parseFloat(
-        formData.preferred_selling_radius_km
-      )
-    }
-    if (formData.farmer_quality_notes.trim()) {
-      payload.farmer_quality_notes = formData.farmer_quality_notes.trim()
-    }
-    if (formData.minimum_acceptable_price) {
-      payload.minimum_acceptable_price = parseFloat(
-        formData.minimum_acceptable_price
-      )
+      ...(formData.preferred_selling_radius_km && { preferred_selling_radius_km: parseFloat(formData.preferred_selling_radius_km) }),
+      ...(formData.farmer_quality_notes.trim() && { farmer_quality_notes: formData.farmer_quality_notes.trim() }),
+      ...(formData.minimum_acceptable_price && { minimum_acceptable_price: parseFloat(formData.minimum_acceptable_price) }),
     }
 
-    try {
-      const result = await dispatch(createCropLot(payload))
-      if (createCropLot.fulfilled.match(result)) {
-        setTimeout(() => {
-          dispatch(clearCreateState())
-          navigate(`/seller/crop-lots/${result.payload.public_id}`)
-        }, 800)
-      } else {
-        console.error('createCropLot rejected:', result)
-      }
-    } catch (err) {
-      console.error('createCropLot dispatch threw:', err)
+    const result = await dispatch(createCropLot(payload))
+    if (createCropLot.fulfilled.match(result)) {
+      dispatch(clearCreateState())
+      navigate(`/seller/crop-lots/${result.payload.public_id}`)
     }
   }
 
+  const progress = (step / 5) * 100
+
   return (
-    <>
+    <div className="min-h-screen bg-earth-50 pb-20">
       <PageHeader
-        eyebrow="Selling"
-        title="List a new crop lot"
-        description="Tell buyers what you have, how much, and where it is. The more accurate, the better the offers you receive."
-        back={{ to: '/seller/crop-lots', label: 'My Crops' }}
+        eyebrow={t("Selling Workspace")}
+        title={t("Smart Sell Wizard")}
+        back={{ to: '/seller', label: t('Dashboard') }}
       />
 
-      <form
-        onSubmit={handleSubmit}
-        className="ac-card mx-auto max-w-3xl p-6 sm:p-8"
-      >
-        {/* Live crop preview — gives the form a visual hook and
-            reassures the farmer they typed the crop they meant. */}
-        {formData.crop_name.trim() && (
-          <div className="mb-6 flex items-center gap-4 rounded-lg border border-earth-200 bg-earth-50 p-3">
-            <CropImage
-              crop={formData.crop_name}
-              label={formData.crop_name}
-              className="h-14 w-14 flex-shrink-0 rounded-lg"
-            />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-ink-900">
-                {formData.crop_name}
-                {formData.crop_variety
-                  ? ` · ${formData.crop_variety}`
-                  : ''}
-              </p>
-              <p className="truncate text-xs text-ink-500">
-                {formData.quantity
-                  ? `${formData.quantity} ${formData.quantity_unit}`
-                  : 'Quantity not set yet'}
-                {formData.location ? ` · ${formData.location}` : ''}
-              </p>
-            </div>
-          </div>
-        )}
+      <div className="mx-auto max-w-xl mt-6 px-4">
+        {/* Progress Bar */}
+        <div className="mb-8 h-2 w-full rounded-full bg-earth-200">
+          <div className="h-full rounded-full bg-primary-600 transition-all duration-300" style={{ width: `${progress}%` }} />
+        </div>
 
-        {createStatus === 'succeeded' && createdLot && (
-          <div className="mb-6 rounded-card border border-success-200 bg-success-50 p-4">
-            <p className="text-sm font-medium text-success-700">
-              Crop lot created. Opening it now…
-            </p>
-          </div>
-        )}
-        {createStatus === 'failed' && createError && (
-          <div className="mb-6 rounded-lg border border-rust-200 bg-rust-50 p-4">
-            <p className="text-sm font-medium text-rust-800">
-              Could not create the crop lot
-            </p>
-            <p className="mt-1 text-sm text-rust-700">{createError}</p>
-          </div>
-        )}
+        <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-earth-200">
+          {step === 1 && (
+            <WizardStep title={t("Step 1: What are you selling?")} subtitle={t("Define the crop and its variety.")}>
+              <input name="crop_name" value={formData.crop_name} onChange={handleChange} placeholder={t("Crop name (e.g. Tomato)")} className={FIELD} />
+              <input name="crop_variety" value={formData.crop_variety} onChange={handleChange} placeholder={t("Variety (e.g. Roma)")} className={FIELD} />
+            </WizardStep>
+          )}
 
-        <div className="grid gap-5 sm:grid-cols-2">
-          <div className="sm:col-span-2">
-            <label
-              htmlFor="crop_name"
-              className="block text-xs font-medium text-ink-700"
-            >
-              Crop name <span className="text-rust-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="crop_name"
-              name="crop_name"
-              value={formData.crop_name}
-              onChange={handleChange}
-              placeholder="e.g., Tomato, Wheat, Rice"
-              className={`${FIELD} ${errors.crop_name ? FIELD_ERROR : ''}`}
-            />
-            {errors.crop_name && (
-              <p className="mt-1 text-xs text-rust-600">{errors.crop_name}</p>
-            )}
-          </div>
-
-          <div className="sm:col-span-2">
-            <label
-              htmlFor="crop_variety"
-              className="block text-xs font-medium text-ink-700"
-            >
-              Crop variety <span className="text-rust-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="crop_variety"
-              name="crop_variety"
-              value={formData.crop_variety}
-              onChange={handleChange}
-              placeholder="e.g., Roma, Basmati, IR64"
-              className={`${FIELD} ${errors.crop_variety ? FIELD_ERROR : ''}`}
-            />
-            {errors.crop_variety && (
-              <p className="mt-1 text-xs text-rust-600">
-                {errors.crop_variety}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label
-              htmlFor="quantity"
-              className="block text-xs font-medium text-ink-700"
-            >
-              Quantity <span className="text-rust-500">*</span>
-            </label>
-            <input
-              type="number"
-              id="quantity"
-              name="quantity"
-              value={formData.quantity}
-              onChange={handleChange}
-              step="0.01"
-              min="0.01"
-              placeholder="100"
-              className={`${FIELD} ${errors.quantity ? FIELD_ERROR : ''}`}
-            />
-            {errors.quantity && (
-              <p className="mt-1 text-xs text-rust-600">{errors.quantity}</p>
-            )}
-          </div>
-
-          <div>
-            <label
-              htmlFor="quantity_unit"
-              className="block text-xs font-medium text-ink-700"
-            >
-              Unit <span className="text-rust-500">*</span>
-            </label>
-            <select
-              id="quantity_unit"
-              name="quantity_unit"
-              value={formData.quantity_unit}
-              onChange={handleChange}
-              className={FIELD}
-            >
-              <option value="kg">Kilogram (kg)</option>
-              <option value="quintal">Quintal</option>
-              <option value="ton">Ton</option>
-              <option value="bag">Bag</option>
-              <option value="crate">Crate</option>
-            </select>
-          </div>
-
-          <div>
-            <label
-              htmlFor="harvest_date"
-              className="block text-xs font-medium text-ink-700"
-            >
-              Harvest date <span className="text-rust-500">*</span>
-            </label>
-            <input
-              type="date"
-              id="harvest_date"
-              name="harvest_date"
-              value={formData.harvest_date}
-              onChange={handleChange}
-              className={`${FIELD} ${errors.harvest_date ? FIELD_ERROR : ''}`}
-            />
-            {errors.harvest_date ? (
-              <p className="mt-1 text-xs text-rust-600">
-                {errors.harvest_date}
-              </p>
-            ) : (
-              <p className="mt-1 text-xs text-ink-500">
-                Expected harvest date or already harvested date.
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label
-              htmlFor="location"
-              className="block text-xs font-medium text-ink-700"
-            >
-              Location <span className="text-rust-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="location"
-              name="location"
-              value={formData.location}
-              onChange={handleChange}
-              placeholder="Village, District, State"
-              className={`${FIELD} ${errors.location ? FIELD_ERROR : ''}`}
-            />
-            {errors.location && (
-              <p className="mt-1 text-xs text-rust-600">{errors.location}</p>
-            )}
-          </div>
-
-          <div>
-            <label
-              htmlFor="preferred_selling_radius_km"
-              className="block text-xs font-medium text-ink-700"
-            >
-              Preferred selling radius (km)
-            </label>
-            <input
-              type="number"
-              id="preferred_selling_radius_km"
-              name="preferred_selling_radius_km"
-              value={formData.preferred_selling_radius_km}
-              onChange={handleChange}
-              step="1"
-              min="0"
-              placeholder="50"
-              className={`${FIELD} ${
-                errors.preferred_selling_radius_km ? FIELD_ERROR : ''
-              }`}
-            />
-            {errors.preferred_selling_radius_km ? (
-              <p className="mt-1 text-xs text-rust-600">
-                {errors.preferred_selling_radius_km}
-              </p>
-            ) : (
-              <p className="mt-1 text-xs text-ink-500">
-                How far you are willing to ship or sell.
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label
-              htmlFor="minimum_acceptable_price"
-              className="block text-xs font-medium text-ink-700"
-            >
-              Minimum acceptable price (per unit)
-            </label>
-            <div className="mt-1 flex gap-2">
-              <input
-                type="number"
-                id="minimum_acceptable_price"
-                name="minimum_acceptable_price"
-                value={formData.minimum_acceptable_price}
-                onChange={handleChange}
-                step="0.01"
-                min="0"
-                placeholder="1500"
-                className={`${FIELD} ${
-                  errors.minimum_acceptable_price ? FIELD_ERROR : ''
-                }`}
-              />
-              <select
-                id="price_currency"
-                name="price_currency"
-                value={formData.price_currency}
-                onChange={handleChange}
-                className={FIELD + ' w-28'}
-              >
-                <option value="INR">INR</option>
-                <option value="USD">USD</option>
+          {step === 2 && (
+            <WizardStep title={t("Step 2: How much?")} subtitle={t("Specify total quantity.")}>
+              <input name="quantity" type="number" value={formData.quantity} onChange={handleChange} placeholder={t("Quantity")} className={FIELD} />
+              <select name="quantity_unit" value={formData.quantity_unit} onChange={handleChange} className={FIELD}>
+                <option value="kg">{t("Kilogram (kg)")}</option>
+                <option value="quintal">{t("Quintal")}</option>
+                <option value="ton">{t("Ton")}</option>
               </select>
-            </div>
-            {errors.minimum_acceptable_price && (
-              <p className="mt-1 text-xs text-rust-600">
-                {errors.minimum_acceptable_price}
-              </p>
+            </WizardStep>
+          )}
+
+          {step === 3 && (
+            <WizardStep title={t("Step 3: When?")} subtitle={t("Specify harvest timing.")}>
+              <input name="harvest_date" type="date" value={formData.harvest_date} onChange={handleChange} className={FIELD} />
+            </WizardStep>
+          )}
+
+          {step === 4 && (
+            <WizardStep title={t("Step 4: Where?")} subtitle={t("Specify produce location.")}>
+              <input name="location" value={formData.location} onChange={handleChange} placeholder={t("Village, District")} className={FIELD} />
+            </WizardStep>
+          )}
+
+          {step === 5 && (
+            <WizardStep title={t("Step 5: Quality & Price")} subtitle={t("Add details to help buyers decide.")}>
+              <input name="minimum_acceptable_price" type="number" value={formData.minimum_acceptable_price} onChange={handleChange} placeholder={t("Min price (Optional)")} className={FIELD} />
+              <textarea name="farmer_quality_notes" value={formData.farmer_quality_notes} onChange={handleChange} placeholder={t("Quality notes (Grade A, etc.)")} className={FIELD} rows={3} />
+            </WizardStep>
+          )}
+
+          <div className="mt-8 flex justify-between">
+            <button
+              disabled={step === 1}
+              onClick={() => setStep(s => s - 1)}
+              className="px-4 py-2 text-sm font-medium text-ink-600 disabled:opacity-50"
+            >
+              {t("Back")}
+            </button>
+            {step < 5 ? (
+              <button
+                onClick={() => setStep(s => s + 1)}
+                className="px-6 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700"
+              >
+                {t("Next")}
+              </button>
+            ) : (
+              <button
+                onClick={handleSubmit}
+                disabled={createStatus === 'loading'}
+                className="px-6 py-2 bg-primary-700 text-white rounded-lg text-sm font-bold hover:bg-primary-800"
+              >
+                {createStatus === 'loading' ? t("Creating...") : t("Analyze Selling Options")}
+              </button>
             )}
           </div>
-
-          <div className="sm:col-span-2">
-            <label
-              htmlFor="farmer_quality_notes"
-              className="block text-xs font-medium text-ink-700"
-            >
-              Quality notes (your observation)
-            </label>
-            <textarea
-              id="farmer_quality_notes"
-              name="farmer_quality_notes"
-              value={formData.farmer_quality_notes}
-              onChange={handleChange}
-              rows={3}
-              placeholder="e.g., Grade A appearance, no visible damage, stored in cool conditions"
-              className={FIELD}
-            />
-            <p className="mt-1 text-xs text-ink-500">
-              This is your own observation — not an official grade.
-            </p>
-          </div>
         </div>
-
-        <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-ink-100 pt-6">
-          <button
-            type="submit"
-            disabled={createStatus === 'loading'}
-            className="ac-btn-primary"
-          >
-            {createStatus === 'loading' ? 'Creating…' : 'Create crop lot'}
-          </button>
-          <Link to="/seller/crop-lots" className="ac-btn-ghost">
-            Cancel
-          </Link>
-          <p className="ml-auto text-xs text-ink-500">
-            You can edit these details any time before a buyer accepts an
-            offer.
-          </p>
-        </div>
-      </form>
-    </>
+      </div>
+    </div>
   )
 }
 

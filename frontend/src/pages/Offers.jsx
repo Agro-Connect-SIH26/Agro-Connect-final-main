@@ -20,6 +20,7 @@ import CropImage from '../components/CropImage.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import OfferComparison from '../components/OfferComparison.jsx'
 import usePageMeta from '../hooks/usePageMeta.js'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 const STATUS_TONE = {
   OPEN: 'bg-honey-100 text-honey-800',
@@ -40,12 +41,13 @@ const STATUS_LABEL = {
 }
 
 function Offers() {
+  const { t } = useLanguage()
   const { publicId } = useParams()
   const dispatch = useDispatch()
   const { currentLot, detailStatus } = useSelector((state) => state.cropLots)
   usePageMeta({
-    title: 'Offers',
-    description: 'Every offer buyers have sent on this crop lot.',
+    title: t('Offers'),
+    description: t('Every offer buyers have sent on this crop lot.'),
   })
   const { list, listStatus, listError } = useSelector((state) => state.offers)
 
@@ -62,20 +64,20 @@ function Offers() {
   return (
     <>
       <PageHeader
-        eyebrow={currentLot ? currentLot.crop_name : 'Selling'}
-        title="Offers"
+        eyebrow={currentLot ? currentLot.crop_name : t('Selling')}
+        title={t("Offers")}
         subtitle={
           currentLot
-            ? `Every offer buyers have sent on ${currentLot.crop_name} · ${currentLot.quantity} ${currentLot.quantity_unit}.`
-            : 'Every offer buyers have sent on this lot.'
+            ? `${t("Every offer buyers have sent on")} ${currentLot.crop_name} · ${currentLot.quantity} ${currentLot.quantity_unit}.`
+            : t('Every offer buyers have sent on this lot.')
         }
-        back={{ to: `/seller/crop-lots/${publicId}`, label: 'Back to lot' }}
+        back={{ to: `/seller/crop-lots/${publicId}`, label: t('Back to lot') }}
         actions={
           <Link
             to={`/seller/crop-lots/${publicId}/buyers`}
             className="ac-btn-secondary"
           >
-            Match buyers
+            {t("Match buyers")}
           </Link>
         }
       />
@@ -102,32 +104,32 @@ function Offers() {
 
       {detailStatus === 'loading' && (
         <div className="ac-card p-8 text-center text-sm text-ink-500">
-          Loading lot…
+          {t("Loading lot…")}
         </div>
       )}
 
       {listStatus === 'loading' && (
         <div className="ac-card p-8 text-center text-sm text-ink-500">
-          Loading offers…
+          {t("Loading offers…")}
         </div>
       )}
       {listError && (
         <div className="mb-4 rounded-card border border-rust-200 bg-rust-50 p-4 text-sm text-rust-800">
-          {listError}
+          {listError ? t(listError) : t('Could not load offers.')}
         </div>
       )}
 
       {listStatus === 'succeeded' && list.length === 0 && (
         <EmptyState
           kind="empty"
-          title="No offers yet"
-          description="When buyers make an offer on this lot, it will appear here. You can also match buyers yourself and send the first offer."
+          title={t("No offers yet")}
+          description={t("When buyers make an offer on this lot, it will appear here. You can also match buyers yourself and send the first offer.")}
           action={
             <Link
               to={`/seller/crop-lots/${publicId}/buyers`}
               className="ac-btn-primary"
             >
-              Match buyers
+              {t("Match buyers")}
             </Link>
           }
         />
@@ -150,7 +152,7 @@ function Offers() {
           <ul className="ac-stagger mt-4 space-y-3">
           {list.map((o) => {
             const tone = STATUS_TONE[o.status] || STATUS_TONE.OPEN
-            const label = STATUS_LABEL[o.status] || o.status
+            const label = STATUS_LABEL[o.status] ? t(STATUS_LABEL[o.status]) : t(o.status)
             return (
               <li key={o.public_id}>
                 <Link
@@ -159,7 +161,7 @@ function Offers() {
                 >
                   <div className="min-w-0">
                     <p className="text-xs uppercase tracking-wide text-ink-500">
-                      From {o.buyer?.name || o.buyer_public_id}
+                      {t("From")} {o.buyer?.name || o.buyer_public_id}
                     </p>
                     <p className="mt-0.5 font-display text-xl text-ink-900">
                       {fmtInr(o.current_price)}
@@ -168,7 +170,7 @@ function Offers() {
                       </span>
                     </p>
                     <p className="text-xs text-ink-500">
-                      Qty:{' '}
+                      {t("Qty")}:{' '}
                       {fmtKg(o.current_quantity, currentLot?.quantity_unit)}
                     </p>
                   </div>
@@ -179,7 +181,7 @@ function Offers() {
                       {label}
                     </span>
                     <span className="hidden text-xs text-ink-400 sm:inline">
-                      Open →
+                      {t("Open")} →
                     </span>
                   </div>
                 </Link>

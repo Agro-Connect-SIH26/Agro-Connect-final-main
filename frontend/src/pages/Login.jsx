@@ -32,11 +32,13 @@ import {
 } from '../redux/slices/authSlice.js'
 import Brand from '../components/Brand.jsx'
 import usePageMeta from '../hooks/usePageMeta.js'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 const ROLE_LANDING = {
   SELLER: '/farmer',
   BUYER: '/buyer',
   FPO: '/fpos',
+  SERVICE_PROVIDER: '/provider',
 }
 
 // Static demo passwords — the same values stored on the
@@ -48,6 +50,8 @@ const DEMO_PASSWORDS = {
   'farmer@agroconnect.demo': 'farmer123',
   'buyer@agroconnect.demo': 'buyer123',
   'fpofarmer@agroconnect.demo': 'farmer123',
+  'transporter@agroconnect.demo': 'transporter123',
+  'coldstorage@agroconnect.demo': 'coldstorage123',
 }
 
 function sanitizeNext(raw) {
@@ -56,7 +60,7 @@ function sanitizeNext(raw) {
     const decoded = decodeURIComponent(raw)
     if (typeof decoded !== 'string') return null
     if (!decoded.startsWith('/')) return null
-    if (decoded.startsWith('//')) return null
+    if (!decoded.startsWith('//')) return null
     return decoded
   } catch {
     return null
@@ -64,6 +68,7 @@ function sanitizeNext(raw) {
 }
 
 function Login() {
+  const { t } = useLanguage()
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -73,8 +78,8 @@ function Login() {
   const role = useSelector(selectRole)
   const publicId = useSelector(selectPublicId)
   usePageMeta({
-    title: 'Sign in',
-    description: 'Sign in to your AgroConnect account — farmers, buyers, and FPOs all sign in here.',
+    title: t('Sign in'),
+    description: t('Sign in to your AgroConnect account — farmers, buyers, and FPOs all sign in here.'),
   })
 
   const [email, setEmail] = useState('')
@@ -110,11 +115,11 @@ function Login() {
       .catch((err) => {
         if (cancelled) return
         setDemoLoadError(
-          err?.response?.data?.detail || 'Could not load sample accounts'
+          err?.response?.data?.detail || t('Could not load sample accounts')
         )
       })
     return () => { cancelled = true }
-  }, [])
+  }, [t])
 
   // One-click auto-login for the demo accounts. The demo passwords
   // are public (the seeder stores them in plain text on the
@@ -157,11 +162,11 @@ function Login() {
     e.preventDefault()
     setValidationError(null)
     if (!email.trim()) {
-      setValidationError('Email is required')
+      setValidationError(t('Email is required'))
       return
     }
     if (!password) {
-      setValidationError('Password is required')
+      setValidationError(t('Password is required'))
       return
     }
     const action = await dispatch(
@@ -178,10 +183,10 @@ function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white">
+    <div className="min-h-screen bg-earth-50">
       <header className="border-b border-primary-100 bg-white/70 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <a href="/" aria-label="AgroConnect home">
+          <a href="/" aria-label={t("AgroConnect home")}>
             <Brand variant="mark" size="md" />
           </a>
           <div className="flex items-center gap-4">
@@ -189,13 +194,13 @@ function Login() {
               to="/register"
               className="text-sm font-medium text-primary-700 hover:text-primary-800"
             >
-              Create account
+              {t("Create account")}
             </Link>
             <a
               href="/"
               className="text-sm font-medium text-primary-700 hover:text-primary-800"
             >
-              ← Back to home
+              ← {t("Back to home")}
             </a>
           </div>
         </div>
@@ -205,17 +210,14 @@ function Login() {
         <div className="grid gap-8 md:grid-cols-2">
           <section>
             <h1 className="text-3xl font-bold text-ink-900 sm:text-4xl">
-              Sign in
+              {t("Sign in")}
             </h1>
             <p className="mt-3 text-ink-600">
-              AgroConnect connects farmers, buyers, and FPOs. Sign in to
-              access your dashboard, manage crop lots, and track deals.
+              {t("AgroConnect connects farmers, buyers, and FPOs. Sign in to access your dashboard, manage crop lots, and track deals.")}
             </p>
 
             <div className="mt-4 rounded-lg border border-honey-200 bg-honey-50 p-3 text-sm text-honey-800">
-              <strong>Sample identities.</strong> The accounts
-              below are pre-seeded sample identities for evaluation.
-              Do not use a real password.
+              <strong>{t("Sample identities.")}</strong> {t("The accounts below are pre-seeded sample identities for evaluation. Do not use a real password.")}
             </div>
 
             <form
@@ -227,7 +229,7 @@ function Login() {
                   htmlFor="email"
                   className="block text-sm font-medium text-ink-700"
                 >
-                  Email
+                  {t("Email")}
                 </label>
                 <input
                   id="email"
@@ -236,7 +238,7 @@ function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="mt-1 block w-full rounded-lg border border-ink-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                  placeholder="you@example.com"
+                  placeholder={t("you@example.com")}
                 />
               </div>
               <div>
@@ -244,7 +246,7 @@ function Login() {
                   htmlFor="password"
                   className="block text-sm font-medium text-ink-700"
                 >
-                  Password
+                  {t("Password")}
                 </label>
                 <div className="mt-1 flex">
                   <input
@@ -254,14 +256,14 @@ function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="block w-full rounded-l-lg border border-ink-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                    placeholder="••••••••"
+                    placeholder={t("••••••••")}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
                     className="rounded-r-lg border border-l-0 border-ink-200 bg-earth-50 px-3 text-xs font-medium text-ink-600 hover:bg-earth-100"
                   >
-                    {showPassword ? 'Hide' : 'Show'}
+                    {showPassword ? t('Hide') : t('Show')}
                   </button>
                 </div>
               </div>
@@ -277,16 +279,16 @@ function Login() {
                 disabled={status === 'loading'}
                 className="w-full rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-700 disabled:opacity-50"
               >
-                {status === 'loading' ? 'Signing in…' : 'Sign in'}
+                {status === 'loading' ? t('Signing in…') : t('Sign in')}
               </button>
 
               <p className="text-center text-sm text-ink-600">
-                New here?{' '}
+                {t("New here?")}{' '}
                 <Link
                   to="/register"
                   className="font-medium text-primary-700 hover:text-primary-800"
                 >
-                  Create an account
+                  {t("Create an account")}
                 </Link>
               </p>
             </form>
@@ -295,12 +297,10 @@ function Login() {
           <section>
             <div className="rounded-2xl border border-primary-200 bg-white p-6 shadow-sm">
               <h2 className="text-lg font-semibold text-ink-900">
-                Use a sample account
+                {t("Use a sample account")}
               </h2>
               <p className="mt-1 text-sm text-ink-600">
-                One click to sign in as a pre-seeded sample identity. The
-                same password is shown next to each account so you can
-                also type it manually.
+                {t("One click to sign in as a pre-seeded sample identity. The same password is shown next to each account so you can also type it manually.")}
               </p>
 
               {demoLoadError && (
@@ -328,14 +328,14 @@ function Login() {
                             {acc.email}
                           </p>
                           <p className="mt-1 text-xs text-ink-600">
-                            Role:{' '}
+                            {t("Role")}:{' '}
                             <span className="rounded-full bg-primary-100 px-2 py-0.5 text-[10px] font-medium text-primary-800">
-                              {acc.role}
+                              {t(acc.role)}
                             </span>
                           </p>
                           {plainPassword && (
                             <p className="mt-1 font-mono text-xs text-ink-700">
-                              password: {plainPassword}
+                              {t("password")}: {plainPassword}
                             </p>
                           )}
                         </div>
@@ -346,14 +346,14 @@ function Login() {
                             disabled={status === 'loading' || isAuto}
                             className="rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition hover:bg-primary-700 disabled:opacity-50"
                           >
-                            {isAuto ? 'Signing in…' : 'Use sample account'}
+                            {isAuto ? t('Signing in…') : t('Use sample account')}
                           </button>
                           <button
                             type="button"
                             onClick={() => onFillDemo(acc)}
                             className="text-[11px] font-medium text-primary-700 hover:text-primary-800"
                           >
-                            Just fill email
+                            {t("Just fill email")}
                           </button>
                         </div>
                       </div>
@@ -362,27 +362,25 @@ function Login() {
                 })}
                 {demoAccounts.length === 0 && !demoLoadError && (
                   <li className="rounded-xl border border-dashed border-ink-200 p-3 text-xs text-ink-500">
-                    Sample accounts loading…
+                    {t("Sample accounts loading…")}
                   </li>
                 )}
               </ul>
 
               <p className="mt-4 text-xs text-ink-500">
-                After signing in you'll be sent straight to your role's
-                dashboard. Use the "Logout" link in the top bar to
-                change identity.
+                {t("After signing in you'll be sent straight to your role's dashboard. Use the \"Logout\" link in the top bar to change identity.")}
               </p>
             </div>
 
             <div className="mt-4 rounded-2xl border border-earth-200 bg-white p-6 shadow-sm">
               <h3 className="text-sm font-semibold text-ink-900">
-                What happens after login?
+                {t("What happens after login?")}
               </h3>
               <ul className="mt-2 space-y-1 text-sm text-ink-700">
-                <li>• A signed JWT is stored in your browser and sent on every request.</li>
-                <li>• Passwords are bcrypt-hashed on the server (pre-seeded sample accounts are an exception).</li>
-                <li>• Refresh the page and you'll stay signed in.</li>
-                <li>• Use "Logout" to clear your session.</li>
+                <li>• {t("A signed JWT is stored in your browser and sent on every request.")}</li>
+                <li>• {t("Passwords are bcrypt-hashed on the server (pre-seeded sample accounts are an exception).")}</li>
+                <li>• {t("Refresh the page and you'll stay signed in.")}</li>
+                <li>• {t("Use \"Logout\" to clear your session.")}</li>
               </ul>
             </div>
           </section>

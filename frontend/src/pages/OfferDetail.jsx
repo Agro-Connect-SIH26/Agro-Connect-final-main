@@ -27,6 +27,7 @@ import { fmtInr } from '../utils/format.js'
 import PageHeader from '../components/PageHeader.jsx'
 import CropImage from '../components/CropImage.jsx'
 import usePageMeta from '../hooks/usePageMeta.js'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 const INPUT =
   'w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500'
@@ -50,11 +51,12 @@ const STATUS_LABEL = {
 }
 
 function OfferDetail() {
+  const { t } = useLanguage()
   const { publicId } = useParams()
   const dispatch = useDispatch()
   usePageMeta({
-    title: 'Offer',
-    description: 'Counter, accept, or reject this offer. View the full message log and current terms.',
+    title: t('Offer'),
+    description: t('Counter, accept, or reject this offer. View the full message log and current terms.'),
   })
   const navigate = useNavigate()
   const {
@@ -116,9 +118,9 @@ function OfferDetail() {
   if (detailStatus === 'loading') {
     return (
       <>
-        <PageHeader eyebrow="Selling" title="Offer" subtitle="Loading offer…" />
+        <PageHeader eyebrow={t("Selling")} title={t("Offer")} subtitle={t("Loading offer…")} />
         <div className="ac-card p-8 text-center text-sm text-ink-500">
-          Loading offer…
+          {t("Loading offer…")}
         </div>
       </>
     )
@@ -126,9 +128,9 @@ function OfferDetail() {
   if (detailStatus === 'failed') {
     return (
       <>
-        <PageHeader eyebrow="Selling" title="Offer" />
+        <PageHeader eyebrow={t("Selling")} title={t("Offer")} />
         <div className="mb-4 rounded-card border border-rust-200 bg-rust-50 p-4 text-sm text-rust-800">
-          {detailError}
+          {detailError ? t(detailError) : t('Could not load offer.')}
         </div>
       </>
     )
@@ -136,20 +138,20 @@ function OfferDetail() {
   if (!current) return null
 
   const lot = current.crop_lot || {}
-  const statusLabel = STATUS_LABEL[current.status] || current.status
+  const statusLabel = STATUS_LABEL[current.status] ? t(STATUS_LABEL[current.status]) : t(current.status)
   const statusTone = STATUS_TONE[current.status] || STATUS_TONE.OPEN
 
   return (
     <>
       <PageHeader
-        eyebrow={lot.crop_name || 'Selling'}
-        title={`Offer from ${current.buyer?.name || 'buyer'}`}
+        eyebrow={lot.crop_name || t('Selling')}
+        title={`${t("Offer from")} ${current.buyer?.name || t('buyer')}`}
         subtitle={
           lot.crop_name
-            ? `For ${lot.crop_name}${lot.crop_variety ? ` · ${lot.crop_variety}` : ''} · ${lot.quantity || ''} ${lot.quantity_unit || ''}`
-            : 'Counter, accept, or reject this offer.'
+            ? `${t("For")} ${lot.crop_name}${lot.crop_variety ? ` · ${lot.crop_variety}` : ''} · ${lot.quantity || ''} ${lot.quantity_unit || ''}`
+            : t('Counter, accept, or reject this offer.')
         }
-        back={{ to: '/seller/offers', label: 'All offers' }}
+        back={{ to: '/seller/offers', label: t('All offers') }}
         actions={
           lot.public_id && (
             <span
@@ -182,17 +184,17 @@ function OfferDetail() {
 
       <section className="ac-card mb-6 p-5">
         <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
-          Current price
+          {t("Current price")}
         </p>
         <p className="mt-1 font-display text-3xl text-ink-900">
           {fmtInr(current.current_price)}
         </p>
         <p className="mt-1 text-sm text-ink-600">
-          Quantity: <strong className="text-ink-800">{current.current_quantity}</strong>
+          {t("Quantity")}: <strong className="text-ink-800">{current.current_quantity}</strong>
         </p>
         {current.crop_lot?.public_id && (
           <p className="mt-2 text-xs text-ink-500">
-            Lot:{' '}
+            {t("Lot")}:{' '}
             <a
               href={`/seller/crop-lots/${current.crop_lot.public_id}`}
               className="text-primary-700 hover:underline"
@@ -205,27 +207,27 @@ function OfferDetail() {
 
       {['OPEN', 'COUNTERED'].includes(current.status) && (
         <section className="ac-card mb-6 p-5">
-          <h2 className="font-display text-lg text-ink-900">Actions</h2>
+          <h2 className="font-display text-lg text-ink-900">{t("Actions")}</h2>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <button
               onClick={() => setShowCounter((v) => !v)}
               className="ac-btn-secondary"
             >
-              {showCounter ? 'Close counter' : 'Counter'}
+              {showCounter ? t('Close counter') : t('Counter')}
             </button>
             <button
               onClick={handleAccept}
               disabled={actionStatus === 'loading'}
               className="ac-btn-primary disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Accept
+              {t("Accept")}
             </button>
             <div className="flex items-center gap-2">
               <input
                 type="text"
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="Reject reason (optional)"
+                placeholder={t("Reject reason (optional)")}
                 className={INPUT + ' w-56'}
               />
               <button
@@ -233,19 +235,19 @@ function OfferDetail() {
                 disabled={actionStatus === 'loading'}
                 className="ac-btn-danger disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Reject
+                {t("Reject")}
               </button>
             </div>
           </div>
           {actionError && (
-            <p className="mt-3 text-sm text-rust-700">{actionError}</p>
+            <p className="mt-3 text-sm text-rust-700">{t(actionError)}</p>
           )}
           {showCounter && (
             <form onSubmit={handleCounter} className="mt-4 space-y-3 border-t border-ink-100 pt-4">
               <div className="grid gap-3 sm:grid-cols-3">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-ink-700">
-                    Actor
+                    {t("Actor")}
                   </label>
                   <select
                     value={counter.actor}
@@ -254,13 +256,13 @@ function OfferDetail() {
                     }
                     className={INPUT}
                   >
-                    <option value="FARMER">Farmer</option>
-                    <option value="BUYER">Buyer</option>
+                    <option value="FARMER">{t("Farmer")}</option>
+                    <option value="BUYER">{t("Buyer")}</option>
                   </select>
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-ink-700">
-                    Counter price
+                    {t("Counter price")}
                   </label>
                   <input
                     type="number"
@@ -275,7 +277,7 @@ function OfferDetail() {
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-ink-700">
-                    Counter qty
+                    {t("Counter qty")}
                   </label>
                   <input
                     type="number"
@@ -291,7 +293,7 @@ function OfferDetail() {
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-ink-700">
-                  Message (optional)
+                  {t("Message (optional)")}
                 </label>
                 <textarea
                   rows={2}
@@ -307,7 +309,7 @@ function OfferDetail() {
                 disabled={actionStatus === 'loading'}
                 className="ac-btn-primary disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Send counter
+                {t("Send counter")}
               </button>
             </form>
           )}
@@ -315,7 +317,7 @@ function OfferDetail() {
       )}
 
       <section className="ac-card p-5">
-        <h2 className="font-display text-lg text-ink-900">Messages</h2>
+        <h2 className="font-display text-lg text-ink-900">{t("Messages")}</h2>
         {current.messages && current.messages.length > 0 ? (
           <ol className="mt-3 space-y-2">
             {current.messages.map((m) => (
@@ -324,17 +326,17 @@ function OfferDetail() {
                 className="rounded-card border border-ink-100 bg-earth-50 p-3 text-sm"
               >
                 <div className="flex flex-wrap items-center gap-2 text-xs text-ink-500">
-                  <span className="font-semibold text-ink-700">{m.actor}</span>
-                  <span>· {m.action}</span>
+                  <span className="font-semibold text-ink-700">{t(m.actor)}</span>
+                  <span>· {t(m.action)}</span>
                   <span>· {new Date(m.created_at).toLocaleString()}</span>
                 </div>
                 {m.price && (
                   <p className="mt-1 text-ink-800">
-                    Price: <strong>{fmtInr(m.price)}</strong>
+                    {t("Price")}: <strong>{fmtInr(m.price)}</strong>
                   </p>
                 )}
                 {m.quantity && (
-                  <p className="text-ink-800">Qty: <strong>{m.quantity}</strong></p>
+                  <p className="text-ink-800">{t("Qty")}: <strong>{m.quantity}</strong></p>
                 )}
                 {m.message && (
                   <p className="mt-1 text-ink-700">{m.message}</p>
@@ -343,7 +345,7 @@ function OfferDetail() {
             ))}
           </ol>
         ) : (
-          <p className="mt-3 text-sm text-ink-500">No messages yet.</p>
+          <p className="mt-3 text-sm text-ink-500">{t("No messages yet.")}</p>
         )}
       </section>
     </>

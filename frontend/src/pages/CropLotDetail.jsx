@@ -42,6 +42,7 @@ import MandiMap from '../components/MandiMap.jsx'
 import CredibilityBadge from '../components/CredibilityBadge.jsx'
 import useCredibility from '../hooks/useCredibility.js'
 import usePageMeta from '../hooks/usePageMeta.js'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 const STATUS_TONE = {
   DRAFT: 'bg-ink-100 text-ink-700',
@@ -61,23 +62,25 @@ const INPUT =
   'w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500'
 
 function StatusBadge({ status }) {
+  const { t } = useLanguage()
   const tone = STATUS_TONE[status] || STATUS_TONE.DRAFT
   const label = STATUS_LABEL[status] || status
   return (
     <span
       className={`inline-block rounded-full px-4 py-1.5 text-xs font-semibold ${tone}`}
     >
-      {label}
+      {t(label)}
     </span>
   )
 }
 
 function CropLotDetail() {
+  const { t } = useLanguage()
   const { publicId } = useParams()
   const dispatch = useDispatch()
   usePageMeta({
-    title: 'Crop lot',
-    description: 'Decision support, net realisation, offers, and quality for this crop lot.',
+    title: t('Crop lot'),
+    description: t('Decision support, net realisation, offers, and quality for this crop lot.'),
   })
   const { currentLot, detailStatus, detailError } = useSelector(
     (state) => state.cropLots
@@ -160,12 +163,12 @@ function CropLotDetail() {
     return (
       <>
         <PageHeader
-          eyebrow="Selling"
-          title="Crop lot"
-          subtitle="Loading lot…"
+          eyebrow={t("Selling")}
+          title={t("Crop lot")}
+          description={t("Loading lot…")}
         />
         <div className="ac-card p-12 text-center text-sm text-ink-500">
-          Loading crop lot…
+          {t("Loading crop lot…")}
         </div>
       </>
     )
@@ -174,15 +177,15 @@ function CropLotDetail() {
   if (detailStatus === 'failed') {
     return (
       <>
-        <PageHeader eyebrow="Selling" title="Crop lot" />
+        <PageHeader eyebrow={t("Selling")} title={t("Crop lot")} />
         <div className="rounded-card border border-rust-200 bg-rust-50 p-5 text-sm text-rust-800">
-          <p className="font-medium">Failed to load crop lot</p>
+          <p className="font-medium">{t("Failed to load crop lot")}</p>
           <p className="mt-1 text-xs text-rust-700">{detailError}</p>
           <button
             onClick={() => dispatch(fetchCropLotById(publicId))}
             className="ac-btn-secondary mt-3"
           >
-            Retry
+            {t("Retry")}
           </button>
         </div>
       </>
@@ -194,14 +197,14 @@ function CropLotDetail() {
   return (
     <>
       <PageHeader
-        eyebrow="Selling"
+        eyebrow={t("Selling")}
         title={currentLot.crop_name}
-        subtitle={
-          currentLot.crop_variety
-            ? `${currentLot.crop_variety} · ${currentLot.quantity} ${currentLot.quantity_unit} · ${currentLot.location || ''}`
-            : `${currentLot.quantity} ${currentLot.quantity_unit} · ${currentLot.location || ''}`
-        }
-        back={{ to: '/seller/crop-lots', label: 'My Crops' }}
+        description={
+            currentLot.crop_variety
+              ? `${currentLot.crop_variety} · ${fmtKg(currentLot.quantity, currentLot.quantity_unit)} · ${currentLot.location || ''}`
+              : `${fmtKg(currentLot.quantity, currentLot.quantity_unit)} · ${currentLot.location || ''}`
+          }
+        back={{ to: '/seller/crop-lots', label: t('My Crops') }}
         actions={<StatusBadge status={currentLot.status} />}
       />
 
@@ -236,7 +239,7 @@ function CropLotDetail() {
             <dl className="mt-5 grid grid-cols-2 gap-y-3 text-sm sm:grid-cols-3">
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                  Quantity
+                  {t("Quantity")}
                 </dt>
                 <dd className="mt-0.5 font-display text-base text-ink-900">
                   {fmtKg(currentLot.quantity, currentLot.quantity_unit)}
@@ -244,7 +247,7 @@ function CropLotDetail() {
               </div>
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                  Harvest
+                  {t("Harvest")}
                 </dt>
                 <dd className="mt-0.5 text-ink-800">
                   {currentLot.harvest_date
@@ -254,7 +257,7 @@ function CropLotDetail() {
               </div>
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                  Location
+                  {t("Location")}
                 </dt>
                 <dd className="mt-0.5 text-ink-800">
                   {currentLot.location || '—'}
@@ -263,7 +266,7 @@ function CropLotDetail() {
               {currentLot.preferred_selling_radius_km != null && (
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                    Selling radius
+                    {t("Selling radius")}
                   </dt>
                   <dd className="mt-0.5 text-ink-800">
                     {currentLot.preferred_selling_radius_km} km
@@ -273,7 +276,7 @@ function CropLotDetail() {
               {currentLot.minimum_acceptable_price != null && (
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                    Min price
+                    {t("Min price")}
                   </dt>
                   <dd className="mt-0.5 font-semibold text-primary-700">
                     {fmtInr(currentLot.minimum_acceptable_price)}
@@ -288,7 +291,7 @@ function CropLotDetail() {
               )}
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                  Created
+                  {t("Created")}
                 </dt>
                 <dd className="mt-0.5 text-ink-800">
                   {currentLot.created_at
@@ -324,69 +327,66 @@ function CropLotDetail() {
       {/* Quality notes (trust: never labelled as a grade) */}
       {currentLot.farmer_quality_notes && (
         <section className="ac-card mb-6 p-5">
-          <p className="ac-section-label">Quality notes</p>
+          <p className="ac-section-label">{t("Quality notes")}</p>
           <p className="mt-2 whitespace-pre-wrap text-sm text-ink-800">
             {currentLot.farmer_quality_notes}
           </p>
           <p className="mt-2 text-xs text-honey-900">
-            ℹ Farmer-provided, not an official quality grade.
+            ℹ {t("Farmer-provided, not an official quality grade.")}
           </p>
         </section>
       )}
 
       {/* Action strip — deep links to the legacy per-lot pages */}
       <section className="ac-card mb-6 p-5">
-        <p className="ac-section-label">Sell this lot</p>
+        <p className="ac-section-label">{t("Sell this lot")}</p>
         <p className="mt-1 text-sm text-ink-600">
-          Find the best market, see the decision, match buyers,
-          negotiate, declare quality.
+          {t("Find the best market, see the decision, match buyers, negotiate, declare quality.")}
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <Link
             to={`/seller/crop-lots/${currentLot.public_id}/opportunities`}
             className="ac-btn-primary"
           >
-            Find best market
+            {t("Find best market")}
           </Link>
           <Link
             to={`/seller/crop-lots/${currentLot.public_id}/decision`}
             className="ac-btn-secondary"
           >
-            Decision support
+            {t("Decision support")}
           </Link>
           <Link
             to={`/seller/crop-lots/${currentLot.public_id}/buyers`}
             className="ac-btn-secondary"
           >
-            Match buyers
+            {t("Match buyers")}
           </Link>
           <Link
             to={`/seller/crop-lots/${currentLot.public_id}/offers`}
             className="ac-btn-secondary"
           >
-            Offers
+            {t("Offers")}
           </Link>
           <Link
             to={`/seller/crop-lots/${currentLot.public_id}/quality`}
             className="ac-btn-secondary"
           >
-            Quality
+            {t("Quality")}
           </Link>
           <Link to="/fpos" className="ac-btn-ghost">
-            Join an FPO
+            {t("Join an FPO")}
           </Link>
         </div>
         <div className="mt-4 border-t border-ink-100 pt-4">
           <p className="text-sm text-ink-600">
-            See current mandi prices for{' '}
-            <strong className="text-ink-800">{currentLot.crop_name}</strong> to
-            benchmark your minimum acceptable price.
+            {t("See current mandi prices for")} <strong className="text-ink-800">{currentLot.crop_name}</strong> {t("to benchmark your minimum acceptable price.")}
           </p>
           <Link
             to={`/market-prices/${encodeURIComponent(currentLot.crop_name)}`}
             className="ac-btn-ghost mt-2"
           >
-            Check market price for {currentLot.crop_name} →
+            {t("Check market price for")} {currentLot.crop_name} →
           </Link>
         </div>
       </section>
@@ -394,12 +394,11 @@ function CropLotDetail() {
       {/* Cold storage — same form + estimate as before, kept compact */}
       <section className="ac-card mb-6 p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="ac-section-label">Cold storage</p>
-          <span className="ac-chip ac-chip-honey">Estimate</span>
+          <p className="ac-section-label">{t("Cold storage")}</p>
+          <span className="ac-chip ac-chip-honey">{t("Estimate")}</span>
         </div>
         <p className="mt-1 text-xs text-honey-900">
-          ⚠ Estimate only. Compares sell-now vs store-then-sell using the
-          lot's quantity, current offers / expected price, and your rate.
+          ⚠ {t("Estimate only. Compares sell-now vs store-then-sell using the lot's quantity, current offers / expected price, and your rate.")}
         </p>
         <form
           onSubmit={saveCold}
@@ -414,11 +413,11 @@ function CropLotDetail() {
               }
               className="h-4 w-4 rounded border-ink-300 text-primary-600 focus:ring-primary-500"
             />
-            Required
+            {t("Required")}
           </label>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-700">
-              Days
+              {t("Days")}
             </label>
             <input
               type="number"
@@ -433,7 +432,7 @@ function CropLotDetail() {
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-700">
-              Rate ₹/kg/day
+              {t("Rate ₹/kg/day")}
             </label>
             <input
               type="number"
@@ -452,7 +451,7 @@ function CropLotDetail() {
               disabled={coldSaving}
               className="ac-btn-primary disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {coldSaving ? 'Saving…' : 'Save'}
+              {coldSaving ? t('Saving…') : t('Save')}
             </button>
             <button
               type="button"
@@ -460,7 +459,7 @@ function CropLotDetail() {
               disabled={estLoading}
               className="ac-btn-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {estLoading ? '…' : 'Estimate'}
+              {estLoading ? '…' : t('Estimate')}
             </button>
           </div>
         </form>
@@ -468,7 +467,7 @@ function CropLotDetail() {
           <p className="mt-2 text-sm text-rust-700">{coldSaveError}</p>
         )}
         {coldSaveOk && (
-          <p className="mt-2 text-sm text-success-700">Saved.</p>
+          <p className="mt-2 text-sm text-success-700">{t("Saved.")}</p>
         )}
         {estError && (
           <p className="mt-2 text-sm text-rust-700">{estError}</p>
@@ -478,7 +477,7 @@ function CropLotDetail() {
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                  Sell now value
+                  {t("Sell now value")}
                 </p>
                 <p className="mt-1 font-display text-base text-ink-900">
                   {fmtInr(estimate.sell_now_value || 0)}
@@ -489,7 +488,7 @@ function CropLotDetail() {
               </div>
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                  Store then sell (net)
+                  {t("Store then sell (net)")}
                 </p>
                 <p className="mt-1 font-display text-base text-ink-900">
                   {fmtInr(estimate.net_store_then_sell || 0)}
@@ -500,8 +499,7 @@ function CropLotDetail() {
               </div>
             </div>
             <p className="mt-2 text-xs text-ink-600">
-              Storage cost: {fmtInr(estimate.storage_cost || 0)} · Δ vs sell
-              now: {fmtInr(estimate.delta_vs_sell_now || 0)}
+              {t("Storage cost")}: {fmtInr(estimate.storage_cost || 0)} · Δ {t("vs sell now")}: {fmtInr(estimate.delta_vs_sell_now || 0)}
             </p>
             <p
               className={`mt-1 text-sm font-semibold ${
@@ -512,7 +510,7 @@ function CropLotDetail() {
                   : 'text-honey-800'
               }`}
             >
-              Recommendation: {estimate.recommendation}
+              {t("Recommendation")}: {t(estimate.recommendation)}
             </p>
             <p className="text-xs text-ink-600">{estimate.rationale}</p>
           </div>
@@ -521,15 +519,15 @@ function CropLotDetail() {
 
       {/* Timestamps */}
       <section className="ac-card p-5">
-        <p className="ac-section-label">Timestamps</p>
+        <p className="ac-section-label">{t("Timestamps")}</p>
         <p className="mt-2 text-sm text-ink-600">
-          Created:{' '}
+          {t("Created")}:{' '}
           {currentLot.created_at
             ? new Date(currentLot.created_at).toLocaleString()
             : '—'}
         </p>
         <p className="text-sm text-ink-600">
-          Last updated:{' '}
+          {t("Last updated")}:{' '}
           {currentLot.updated_at
             ? new Date(currentLot.updated_at).toLocaleString()
             : '—'}

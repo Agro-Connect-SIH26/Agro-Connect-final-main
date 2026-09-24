@@ -22,6 +22,7 @@ import CropImage from '../components/CropImage.jsx'
 import PriceTrendChart from '../components/PriceTrendChart.jsx'
 import MandiMap from '../components/MandiMap.jsx'
 import usePageMeta from '../hooks/usePageMeta.js'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 const INPUT =
   'w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500'
@@ -44,18 +45,23 @@ function ScoreBar({ score }) {
 }
 
 function BuyerMatch() {
+  const { t } = useLanguage()
   const { publicId } = useParams()
   const dispatch = useDispatch()
   usePageMeta({
-    title: 'Matched buyers',
-    description: 'Rule-based buyer matches for this crop lot. Each match shows a 0–100 score and reasoning.',
+    title: t('Matched buyers'),
+    description: t('Rule-based buyer matches for this crop lot. Each match shows a 0–100 score and reasoning.'),
   })
   const navigate = useNavigate()
   const { currentLot, detailStatus } = useSelector((state) => state.cropLots)
+
   const {
     matches,
-    matchStatus,
-    matchError,
+    matchesStatus: matchStatus,
+    matchesError: matchError,
+  } = useSelector((state) => state.buyers)
+
+  const {
     actionStatus,
     actionError,
     lastDeal,
@@ -102,7 +108,7 @@ function BuyerMatch() {
     const price = Number(offerModal.price)
     const quantity = Number(offerModal.quantity)
     if (!price || !quantity) {
-      setOfferError('Price and quantity are required.')
+      setOfferError(t('Price and quantity are required.'))
       return
     }
     dispatch(
@@ -115,7 +121,7 @@ function BuyerMatch() {
       })
     ).then((action) => {
       if (action.meta.requestStatus === 'rejected') {
-        setOfferError(action.payload || 'Failed to send offer')
+        setOfferError(action.payload || t('Failed to send offer'))
       } else {
         setOfferModal(null)
       }
@@ -125,20 +131,20 @@ function BuyerMatch() {
   return (
     <>
       <PageHeader
-        eyebrow={currentLot ? currentLot.crop_name : 'Selling'}
-        title="Matched buyers"
+        eyebrow={currentLot ? currentLot.crop_name : t("Selling")}
+        title={t("Matched buyers")}
         subtitle={
           currentLot
-            ? `Buyers that match ${currentLot.crop_name} · ${currentLot.quantity} ${currentLot.quantity_unit}. Score is rule-based (0–100) — not an AI prediction.`
-            : 'Score is rule-based (0–100) — not an AI prediction.'
+            ? `${t("Buyers that match")} ${currentLot.crop_name} · ${currentLot.quantity} ${t(currentLot.quantity_unit || 'quintal')}. ${t("Score is rule-based (0–100) — not an AI prediction.")}`
+            : t("Score is rule-based (0–100) — not an AI prediction.")
         }
-        back={{ to: `/seller/crop-lots/${publicId}`, label: 'Back to lot' }}
+        back={{ to: `/seller/crop-lots/${publicId}`, label: t("Back to lot") }}
         actions={
           <Link
             to={`/seller/crop-lots/${publicId}/decision`}
             className="ac-btn-secondary"
           >
-            Decision support
+            {t("Decision support")}
           </Link>
         }
       />
@@ -180,13 +186,13 @@ function BuyerMatch() {
 
       {detailStatus === 'loading' && (
         <div className="ac-card p-8 text-center text-sm text-ink-500">
-          Loading lot…
+          {t("Loading lot…")}
         </div>
       )}
 
       {matchStatus === 'loading' && (
         <div className="ac-card p-8 text-center text-sm text-ink-500">
-          Matching buyers…
+          {t("Matching buyers…")}
         </div>
       )}
       {matchError && (
@@ -199,7 +205,7 @@ function BuyerMatch() {
         <div className="ac-stagger space-y-3">
           {matches.length === 0 && (
             <div className="ac-card p-6 text-sm text-ink-600">
-              No buyers matched. Seed sample buyers or refine the lot.
+              {t("No buyers matched. Seed sample buyers or refine the lot.")}
             </div>
           )}
           {matches.map((m) => (
@@ -209,10 +215,10 @@ function BuyerMatch() {
                   <h2 className="flex flex-wrap items-center gap-2 font-display text-lg text-ink-900">
                     {m.buyer.name}
                     {m.buyer.is_demo && (
-                      <span className="ac-chip ac-chip-ink">Sample</span>
+                      <span className="ac-chip ac-chip-ink">{t("Sample")}</span>
                     )}
                     {m.buyer.verification_status === 'VERIFIED' && (
-                      <span className="ac-chip ac-chip-success">Verified</span>
+                      <span className="ac-chip ac-chip-success">{t("Verified")}</span>
                     )}
                   </h2>
                   <p className="mt-0.5 text-sm text-ink-600">
@@ -247,7 +253,7 @@ function BuyerMatch() {
                   onClick={() => openOfferModal(m.buyer)}
                   className="ac-btn-primary"
                 >
-                  Send offer
+                  {t("Send offer")}
                 </button>
               </div>
             </article>
@@ -262,12 +268,12 @@ function BuyerMatch() {
             className="w-full max-w-md rounded-card border border-ink-200 bg-white p-5 shadow-xl"
           >
             <h3 className="font-display text-lg text-ink-900">
-              Send offer to {offerModal.buyer.name}
+              {t("Send offer to")} {offerModal.buyer.name}
             </h3>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-xs font-medium text-ink-700">
-                  Price/quintal
+                  {t("Price/quintal")}
                 </label>
                 <input
                   type="number"
@@ -282,7 +288,7 @@ function BuyerMatch() {
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-ink-700">
-                  Quantity
+                  {t("Quantity")}
                 </label>
                 <input
                   type="number"
@@ -298,7 +304,7 @@ function BuyerMatch() {
             </div>
             <div className="mt-3">
               <label className="mb-1 block text-xs font-medium text-ink-700">
-                Message (optional)
+                {t("Message (optional)")}
               </label>
               <textarea
                 rows={2}
@@ -321,14 +327,14 @@ function BuyerMatch() {
                 onClick={() => setOfferModal(null)}
                 className="ac-btn-ghost"
               >
-                Cancel
+                {t("Cancel")}
               </button>
               <button
                 type="submit"
                 disabled={actionStatus === 'loading'}
                 className="ac-btn-primary disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {actionStatus === 'loading' ? 'Sending…' : 'Send offer'}
+                {actionStatus === "loading" ? t("Sending…") : t("Send offer")}
               </button>
             </div>
           </form>

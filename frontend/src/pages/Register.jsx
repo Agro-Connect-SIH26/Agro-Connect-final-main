@@ -18,7 +18,7 @@
  *
  * Errors from the server are surfaced as a single inline message.
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
@@ -30,17 +30,12 @@ import {
 } from '../redux/slices/authSlice.js'
 import Brand from '../components/Brand.jsx'
 import usePageMeta from '../hooks/usePageMeta.js'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 const ROLE_LANDING = {
   SELLER: '/farmer',
   BUYER: '/buyer',
   FPO: '/fpos',
-}
-
-const ROLE_DESCRIPTIONS = {
-  SELLER: 'Sell your produce. List crop lots, see buyer demand, accept offers.',
-  BUYER: 'Source produce. Browse lots, post demands, message farmers.',
-  FPO: 'Aggregate members. Co-ordinate harvest, share logistics, bulk-sell.',
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -51,7 +46,7 @@ function sanitizeNext(raw) {
     const decoded = decodeURIComponent(raw)
     if (typeof decoded !== 'string') return null
     if (!decoded.startsWith('/')) return null
-    if (decoded.startsWith('//')) return null
+    if (!decoded.startsWith('//')) return null
     return decoded
   } catch {
     return null
@@ -59,6 +54,7 @@ function sanitizeNext(raw) {
 }
 
 function Register() {
+  const { t } = useLanguage()
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -68,9 +64,15 @@ function Register() {
   const role = useSelector(selectRole)
   const publicId = useSelector(selectPublicId)
   usePageMeta({
-    title: 'Create account',
-    description: 'Create your AgroConnect account — choose your role and start in under a minute.',
+    title: t('Create account'),
+    description: t('Create your AgroConnect account — choose your role and start in under a minute.'),
   })
+
+  const ROLE_DESCRIPTIONS = useMemo(() => ({
+    SELLER: t('Sell your produce. List crop lots, see buyer demand, accept offers.'),
+    BUYER: t('Source produce. Browse lots, post demands, message farmers.'),
+    FPO: t('Aggregate members. Co-ordinate harvest, share logistics, bulk-sell.'),
+  }), [t])
 
   const [form, setForm] = useState({
     name: '',
@@ -95,13 +97,13 @@ function Register() {
     setForm((f) => ({ ...f, [k]: e.target.value }))
 
   const validate = () => {
-    if (!form.name.trim()) return 'Full name is required'
-    if (!form.email.trim()) return 'Email is required'
-    if (!EMAIL_RE.test(form.email.trim())) return 'A valid email is required'
-    if (!form.password) return 'Password is required'
-    if (form.password.length < 6) return 'Password must be at least 6 characters'
-    if (form.password !== form.confirm) return 'Passwords do not match'
-    if (!['SELLER', 'BUYER', 'FPO'].includes(form.role)) return 'Pick a role'
+    if (!form.name.trim()) return t('Full name is required')
+    if (!form.email.trim()) return t('Email is required')
+    if (!EMAIL_RE.test(form.email.trim())) return t('A valid email is required')
+    if (!form.password) return t('Password is required')
+    if (form.password.length < 6) return t('Password must be at least 6 characters')
+    if (form.password !== form.confirm) return t('Passwords do not match')
+    if (!['SELLER', 'BUYER', 'FPO'].includes(form.role)) return t('Pick a role')
     return null
   }
 
@@ -134,34 +136,31 @@ function Register() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white">
+    <div className="min-h-screen bg-earth-50">
       <header className="border-b border-primary-100 bg-white/70 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
-          <a href="/" aria-label="AgroConnect home">
+          <a href="/" aria-label={t("AgroConnect home")}>
             <Brand variant="mark" size="md" />
           </a>
           <Link
             to="/login"
             className="text-sm font-medium text-primary-700 hover:text-primary-800"
           >
-            ← Back to sign in
+            ← {t("Back to sign in")}
           </Link>
         </div>
       </header>
 
       <main className="mx-auto max-w-3xl px-6 py-12">
-        <h1 className="text-3xl font-bold text-ink-900">Create account</h1>
+        <h1 className="text-3xl font-bold text-ink-900">{t("Create account")}</h1>
         <p className="mt-2 text-ink-600">
-          Sign up as a farmer, buyer, or FPO. Accounts use a bcrypt-hashed
-          password and a signed token so you stay signed in across
-          refreshes.
+          {t("Sign up as a farmer, buyer, or FPO. Accounts use a bcrypt-hashed password and a signed token so you stay signed in across refreshes.")}
         </p>
 
         <div className="mt-4 rounded-lg border border-honey-200 bg-honey-50 p-3 text-sm text-honey-800">
-          <strong>Sample identities only.</strong> Don't reuse a real-world password.
-          For evaluation you can also use one of the pre-seeded sample
-          accounts on the{' '}
-          <Link to="/login" className="underline">sign in page</Link>.
+          <strong>{t("Sample identities only.")}</strong> {t("Don't reuse a real-world password.")}{' '}
+          {t("For evaluation you can also use one of the pre-seeded sample accounts on the ")}{' '}
+          <Link to="/login" className="underline">{t("sign in page")}</Link>.
         </div>
 
         <form
@@ -170,7 +169,7 @@ function Register() {
         >
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-ink-700">
-              Full name
+              {t("Full name")}
             </label>
             <input
               id="name"
@@ -179,14 +178,14 @@ function Register() {
               value={form.name}
               onChange={update('name')}
               className="mt-1 block w-full rounded-lg border border-ink-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-              placeholder="Ramesh Kumar"
+              placeholder={t("Ramesh Kumar")}
             />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-ink-700">
-                Email
+                {t("Email")}
               </label>
               <input
                 id="email"
@@ -195,12 +194,12 @@ function Register() {
                 value={form.email}
                 onChange={update('email')}
                 className="mt-1 block w-full rounded-lg border border-ink-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                placeholder="you@example.com"
+                placeholder={t("you@example.com")}
               />
             </div>
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-ink-700">
-                Phone <span className="text-ink-400">(optional)</span>
+                {t("Phone")} <span className="text-ink-400">({t("optional")})</span>
               </label>
               <input
                 id="phone"
@@ -209,7 +208,7 @@ function Register() {
                 value={form.phone}
                 onChange={update('phone')}
                 className="mt-1 block w-full rounded-lg border border-ink-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                placeholder="+91 9999999999"
+                placeholder={t("+91 9999999999")}
               />
             </div>
           </div>
@@ -217,7 +216,7 @@ function Register() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-ink-700">
-                Password
+                {t("Password")}
               </label>
               <div className="mt-1 flex">
                 <input
@@ -227,20 +226,20 @@ function Register() {
                   value={form.password}
                   onChange={update('password')}
                   className="block w-full rounded-l-lg border border-ink-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                  placeholder="At least 6 characters"
+                  placeholder={t("At least 6 characters")}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
                   className="rounded-r-lg border border-l-0 border-ink-200 bg-earth-50 px-3 text-xs font-medium text-ink-600 hover:bg-earth-100"
                 >
-                  {showPassword ? 'Hide' : 'Show'}
+                  {showPassword ? t('Hide') : t('Show')}
                 </button>
               </div>
             </div>
             <div>
               <label htmlFor="confirm" className="block text-sm font-medium text-ink-700">
-                Confirm password
+                {t("Confirm password")}
               </label>
               <input
                 id="confirm"
@@ -249,13 +248,13 @@ function Register() {
                 value={form.confirm}
                 onChange={update('confirm')}
                 className="mt-1 block w-full rounded-lg border border-ink-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                placeholder="Re-enter password"
+                placeholder={t("Re-enter password")}
               />
             </div>
           </div>
 
           <fieldset>
-            <legend className="text-sm font-medium text-ink-700">I am a…</legend>
+            <legend className="text-sm font-medium text-ink-700">{t("I am a…")}</legend>
             <div className="mt-2 grid gap-3 sm:grid-cols-3">
               {['SELLER', 'BUYER', 'FPO'].map((r) => (
                 <label
@@ -268,7 +267,7 @@ function Register() {
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-ink-900">
-                      {r === 'SELLER' ? 'Farmer / Seller' : r === 'BUYER' ? 'Buyer' : 'FPO'}
+                      {r === 'SELLER' ? t('Farmer / Seller') : r === 'BUYER' ? t('Buyer') : t('FPO')}
                     </span>
                     <input
                       type="radio"
@@ -298,16 +297,16 @@ function Register() {
             disabled={status === 'loading'}
             className="w-full rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-700 disabled:opacity-50"
           >
-            {status === 'loading' ? 'Creating account…' : 'Create account'}
+            {status === 'loading' ? t('Creating account…') : t('Create account')}
           </button>
 
           <p className="text-center text-sm text-ink-600">
-            Already have an account?{' '}
+            {t("Already have an account?")}{' '}
             <Link
               to="/login"
               className="font-medium text-primary-700 hover:text-primary-800"
             >
-              Sign in
+              {t("Sign in")}
             </Link>
           </p>
         </form>

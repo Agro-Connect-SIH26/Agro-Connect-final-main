@@ -28,6 +28,7 @@ import { useEffect, useState } from 'react'
 import api from '../api/axios.js'
 import { fmtKg, fmtInr, fmtPerKg, NOT_AVAILABLE } from '../utils/format.js'
 import { Check, AlertTriangle, Scale, FileText, RotateCcw } from 'lucide-react'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 const STATUS_TONE = {
   VERIFICATION_PENDING: {
@@ -76,6 +77,8 @@ function fmtPct(v) {
 }
 
 export default function DealVerificationForm({ dealPublicId, tolerancePct = 2 }) {
+  const { t } = useLanguage()
+
   const [record, setRecord] = useState(null)
   const [status, setStatus] = useState('loading') // loading | ready | error
   const [err, setErr] = useState(null)
@@ -208,9 +211,7 @@ export default function DealVerificationForm({ dealPublicId, tolerancePct = 2 })
     <section className="ac-card p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <h2 className="font-display text-base text-ink-900">
-            Weight & quality verification
-          </h2>
+          <h2 className="font-display text-base text-ink-900">{t("Weight & quality verification")}</h2>
           <p className="mt-1 text-xs text-ink-500">
             Receiver measures at delivery; the server records the delta
             on the deal audit trail. Tolerance ±{tolerancePct}%.
@@ -229,9 +230,7 @@ export default function DealVerificationForm({ dealPublicId, tolerancePct = 2 })
       {!record && (
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-700">
-              Declared weight (kg)
-            </label>
+            <label className="mb-1 block text-xs font-medium text-ink-700">{t("Declared weight (kg)")}</label>
             <input
               type="number"
               min="0"
@@ -239,31 +238,27 @@ export default function DealVerificationForm({ dealPublicId, tolerancePct = 2 })
               value={declaredWeight}
               onChange={(e) => setDeclaredWeight(e.target.value)}
               className={INPUT}
-              placeholder="e.g. 1000"
+              placeholder={t("e.g. 1000")}
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-700">
-              Declared grade
-            </label>
+            <label className="mb-1 block text-xs font-medium text-ink-700">{t("Declared grade")}</label>
             <input
               type="text"
               value={declaredGrade}
               onChange={(e) => setDeclaredGrade(e.target.value)}
               className={INPUT}
-              placeholder="e.g. A / B / FAQ"
+              placeholder={t("e.g. A / B / FAQ")}
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-700">
-              Notes
-            </label>
+            <label className="mb-1 block text-xs font-medium text-ink-700">{t("Notes")}</label>
             <input
               type="text"
               value={declaredNotes}
               onChange={(e) => setDeclaredNotes(e.target.value)}
               className={INPUT}
-              placeholder="optional"
+              placeholder={t("optional")}
             />
           </div>
           <div className="sm:col-span-3">
@@ -284,9 +279,7 @@ export default function DealVerificationForm({ dealPublicId, tolerancePct = 2 })
       {record && (
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className="rounded-card border border-ink-100 bg-earth-50 p-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
-              Declared (seller)
-            </p>
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-500">{t("Declared (seller)")}</p>
             <p className="mt-1 font-display text-base text-ink-900">
               {fmtKg(record.declared_weight_kg)}
             </p>
@@ -301,9 +294,7 @@ export default function DealVerificationForm({ dealPublicId, tolerancePct = 2 })
             )}
           </div>
           <div className="rounded-card border border-ink-100 bg-white p-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
-              Actual (receiver)
-            </p>
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-500">{t("Actual (receiver)")}</p>
             <p className="mt-1 font-display text-base text-ink-900">
               {fmtKg(record.actual_weight_kg)}
             </p>
@@ -311,16 +302,13 @@ export default function DealVerificationForm({ dealPublicId, tolerancePct = 2 })
               Grade: {record.verified_quality?.grade || '—'}
             </p>
             {record.weight_delta_pct != null && (
-              <p className="text-xs text-ink-600">
-                Delta: <strong>{fmtPct(record.weight_delta_pct)}</strong>{' '}
+              <p className="text-xs text-ink-600">{t("Delta:")}<strong>{fmtPct(record.weight_delta_pct)}</strong>{' '}
                 (tolerance ±{tolerancePct}%)
               </p>
             )}
             {record.quality_match === false && (
               <p className="text-xs text-rust-700">
-                <AlertTriangle className="mr-1 inline h-3 w-3" />
-                Grade mismatch
-              </p>
+                <AlertTriangle className="mr-1 inline h-3 w-3" />{t("Grade mismatch")}</p>
             )}
           </div>
         </div>
@@ -330,9 +318,7 @@ export default function DealVerificationForm({ dealPublicId, tolerancePct = 2 })
       {record && record.status === 'VERIFICATION_PENDING' && (
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-700">
-              Actual weight (kg)
-            </label>
+            <label className="mb-1 block text-xs font-medium text-ink-700">{t("Actual weight (kg)")}</label>
             <input
               type="number"
               min="0"
@@ -340,31 +326,27 @@ export default function DealVerificationForm({ dealPublicId, tolerancePct = 2 })
               value={actualWeight}
               onChange={(e) => setActualWeight(e.target.value)}
               className={INPUT}
-              placeholder="measured at delivery"
+              placeholder={t("measured at delivery")}
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-700">
-              Verified grade
-            </label>
+            <label className="mb-1 block text-xs font-medium text-ink-700">{t("Verified grade")}</label>
             <input
               type="text"
               value={verifiedGrade}
               onChange={(e) => setVerifiedGrade(e.target.value)}
               className={INPUT}
-              placeholder="optional"
+              placeholder={t("optional")}
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-700">
-              Discrepancy notes
-            </label>
+            <label className="mb-1 block text-xs font-medium text-ink-700">{t("Discrepancy notes")}</label>
             <input
               type="text"
               value={discrepancyNotes}
               onChange={(e) => setDiscrepancyNotes(e.target.value)}
               className={INPUT}
-              placeholder="optional — auto-filled if blank"
+              placeholder={t("optional — auto-filled if blank")}
             />
           </div>
           <div className="sm:col-span-3">
@@ -392,9 +374,7 @@ export default function DealVerificationForm({ dealPublicId, tolerancePct = 2 })
           )}
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-700">
-                Resolution
-              </label>
+              <label className="mb-1 block text-xs font-medium text-ink-700">{t("Resolution")}</label>
               <select
                 value={resolution}
                 onChange={(e) => setResolution(e.target.value)}
@@ -408,15 +388,13 @@ export default function DealVerificationForm({ dealPublicId, tolerancePct = 2 })
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-700">
-                Resolution notes
-              </label>
+              <label className="mb-1 block text-xs font-medium text-ink-700">{t("Resolution notes")}</label>
               <input
                 type="text"
                 value={resolutionNotes}
                 onChange={(e) => setResolutionNotes(e.target.value)}
                 className={INPUT}
-                placeholder="optional"
+                placeholder={t("optional")}
               />
             </div>
           </div>
@@ -438,8 +416,7 @@ export default function DealVerificationForm({ dealPublicId, tolerancePct = 2 })
       {record && record.status === 'RESOLVED' && (
         <div className="mt-4 rounded-card border border-success-200 bg-success-50 p-3 text-xs text-success-700">
           <p>
-            <Check className="mr-1 inline h-3 w-3" />
-            Resolved as <strong>{record.resolution || '—'}</strong>
+            <Check className="mr-1 inline h-3 w-3" />{t("Resolved as")}<strong>{record.resolution || '—'}</strong>
             {record.resolution_notes ? ` — ${record.resolution_notes}` : ''}.
           </p>
         </div>

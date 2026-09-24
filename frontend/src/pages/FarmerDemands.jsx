@@ -25,6 +25,7 @@ import { selectIsSeller } from '../redux/slices/authSlice.js'
 import PageHeader from '../components/PageHeader.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import usePageMeta from '../hooks/usePageMeta.js'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 function safeArray(v) {
   if (Array.isArray(v)) return v
@@ -45,13 +46,14 @@ const STATUS_LABEL = {
 }
 
 function StatusBadge({ status }) {
+  const { t } = useLanguage()
   return (
     <span
       className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
         STATUS_TONE[status] || 'bg-ink-100 text-ink-700'
       }`}
     >
-      {STATUS_LABEL[status] || status}
+      {STATUS_LABEL[status] ? t(STATUS_LABEL[status]) : t(status)}
     </span>
   )
 }
@@ -62,9 +64,11 @@ const FILTER_INPUT =
 function FarmerDemands() {
   const dispatch = useDispatch()
   const isSeller = useSelector(selectIsSeller)
+  const { t } = useLanguage()
+
   usePageMeta({
-    title: 'Buyer demands',
-    description: 'See every active demand from buyers — filter by crop, state, and location. Click in to make an offer.',
+    title: t('Buyer demands'),
+    description: t('See every active demand from buyers — filter by crop, state, and location. Click in to make an offer.'),
   })
   const { rfqList, rfqListStatus, rfqListError } = useSelector(
     (s) => s.demands
@@ -73,6 +77,9 @@ function FarmerDemands() {
   const [cropFilter, setCropFilter] = useState('')
   const [stateFilter, setStateFilter] = useState('')
   const [locationFilter, setLocationFilter] = useState('')
+  const hasActiveFilters = Boolean(
+    cropFilter.trim() || stateFilter.trim() || locationFilter.trim()
+  )
 
   useEffect(() => {
     if (!isSeller) return
@@ -85,57 +92,74 @@ function FarmerDemands() {
 
   const demands = useMemo(() => safeArray(rfqList), [rfqList])
 
+  const clearAllFilters = () => {
+    setCropFilter('')
+    setStateFilter('')
+    setLocationFilter('')
+  }
+
   return (
     <>
       <PageHeader
-        eyebrow="Selling"
-        title="Buyer Demands"
-        description="Live requests from buyers — pick a demand, set your price and quantity, and post an offer. The buyer can accept, counter, or reject."
-        back={{ to: '/farmer', label: 'Dashboard' }}
+        eyebrow={t("Selling")}
+        title={t("Buyer Demands")}
+        description={t("Live requests from buyers — pick a demand, set your price and quantity, and post an offer. The buyer can accept, counter, or reject.")}
+        back={{ to: '/farmer', label: t('Dashboard') }}
         actions={
-          <Link to="/buyers" className="ac-btn-ghost">
-            Buyers
-          </Link>
+          <div className="flex items-center gap-2">
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="ac-btn-ghost text-xs"
+              >
+                {t("Clear filters")}
+              </button>
+            )}
+            <Link to="/buyers" className="ac-btn-ghost">
+              {t("Buyers")}
+            </Link>
+          </div>
         }
       />
 
       {/* Filters */}
       <section className="ac-card mb-4 p-4">
-        <p className="ac-section-label">Filter</p>
+        <p className="ac-section-label">{t("Filter")}</p>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-700">
-              Crop
+              {t("Crop")}
             </label>
             <input
               type="text"
               value={cropFilter}
               onChange={(e) => setCropFilter(e.target.value)}
-              placeholder="e.g. Onion"
+              placeholder={t("e.g. Onion")}
               className={FILTER_INPUT}
             />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-700">
-              State
+              {t("State")}
             </label>
             <input
               type="text"
               value={stateFilter}
               onChange={(e) => setStateFilter(e.target.value)}
-              placeholder="e.g. Bihar"
+              placeholder={t("e.g. Bihar")}
               className={FILTER_INPUT}
             />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-700">
-              Location
+              {t("Location")}
             </label>
             <input
               type="text"
               value={locationFilter}
               onChange={(e) => setLocationFilter(e.target.value)}
-              placeholder="e.g. Patna"
+              placeholder={t("e.g. Patna")}
               className={FILTER_INPUT}
             />
           </div>
@@ -144,20 +168,39 @@ function FarmerDemands() {
 
       {rfqListStatus === 'loading' && (
         <div className="ac-card p-8 text-center text-sm text-ink-500">
-          Loading demands…
+          {t("Loading demands…")}
         </div>
       )}
       {rfqListError && (
         <div className="mb-4 rounded-card border border-rust-200 bg-rust-50 p-4 text-sm text-rust-800">
-          {rfqListError}
+          {t(rfqListError)}
         </div>
       )}
 
       {rfqListStatus === 'succeeded' && demands.length === 0 && (
         <EmptyState
-          kind="info"
-          title="No active demands right now"
-          description="No buyers are asking for the crop / state / location you filtered for. Try clearing filters, or check back later when more buyers post requests."
+          kind={hasActiveFilters ? 'empty' : 'info'}
+          title={
+            hasActiveFilters
+              ? t('No matching buyer demands')
+              : t('No active demands right now')
+          }
+          description={
+            hasActiveFilters
+              ? t('No buyers are asking for the crop / state / location you filtered for. Try clearing filters or searching with broader criteria.')
+              : t('No buyers have posted active crop purchase requests yet. Check back later or explore buyers to connect directly.')
+          }
+          action={
+            hasActiveFilters ? (
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="ac-btn-ghost"
+              >
+                {t("Clear filters")}
+              </button>
+            ) : null
+          }
         />
       )}
 
@@ -186,7 +229,7 @@ function FarmerDemands() {
                         ) : null}
                       </h3>
                       <p className="text-xs text-ink-500">
-                        Buyer: {d.buyer_public_id} · {d.location || '—'}
+                        {t("Buyer")}: {d.buyer_public_id} · {d.location || '—'}
                         {d.state ? `, ${d.state}` : ''}
                       </p>
                     </div>
@@ -196,15 +239,15 @@ function FarmerDemands() {
                   <dl className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
                     <div>
                       <dt className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                        Required
+                        {t("Required")}
                       </dt>
                       <dd className="mt-0.5 font-display text-base text-ink-900">
-                        {d.quantity_kg} kg
+                        {d.quantity_kg} {t("kg")}
                       </dd>
                     </div>
                     <div>
                       <dt className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                        Max ₹/kg
+                        {t("Max ₹/kg")}
                       </dt>
                       <dd className="mt-0.5 font-display text-base text-ink-900">
                         {d.max_price_per_kg != null
@@ -214,15 +257,15 @@ function FarmerDemands() {
                     </div>
                     <div>
                       <dt className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                        Remaining
+                        {t("Remaining")}
                       </dt>
                       <dd className="mt-0.5 font-display text-base text-ink-900">
-                        {remaining} kg
+                        {remaining} {t("kg")}
                       </dd>
                     </div>
                     <div>
                       <dt className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                        Required by
+                        {t("Required by")}
                       </dt>
                       <dd className="mt-0.5 font-display text-base text-ink-900">
                         {d.required_date || '—'}
@@ -233,7 +276,7 @@ function FarmerDemands() {
                   {d.notes && (
                     <p className="mt-3 text-sm text-ink-600">
                       <span className="text-xs font-medium text-ink-500">
-                        Notes:
+                        {t("Notes:")}
                       </span>{' '}
                       {d.notes}
                     </p>
@@ -241,8 +284,10 @@ function FarmerDemands() {
 
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-ink-100 pt-3 text-xs text-ink-500">
                     <span>
-                      {Number(d.offer_count || 0)} offer
-                      {Number(d.offer_count || 0) === 1 ? '' : 's'} so far
+                      {Number(d.offer_count || 0)}{' '}
+                      {Number(d.offer_count || 0) === 1
+                        ? t('offer so far')
+                        : t('offers so far')}
                     </span>
                     <span className="font-mono text-ink-400">
                       {d.public_id}
@@ -259,3 +304,4 @@ function FarmerDemands() {
 }
 
 export default FarmerDemands
+

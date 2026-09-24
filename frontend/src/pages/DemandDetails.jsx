@@ -45,6 +45,7 @@ import {
 import PageHeader from '../components/PageHeader.jsx'
 import usePageMeta from '../hooks/usePageMeta.js'
 import CropImage from '../components/CropImage.jsx'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 function safeArray(v) {
   if (Array.isArray(v)) return v
@@ -65,13 +66,14 @@ const DEMAND_LABEL = {
 }
 
 function DemandStatusBadge({ status }) {
+  const { t } = useLanguage()
   return (
     <span
       className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
         DEMAND_TONE[status] || 'bg-ink-100 text-ink-700'
       }`}
     >
-      {DEMAND_LABEL[status] || status}
+      {t(DEMAND_LABEL[status] || status)}
     </span>
   )
 }
@@ -93,13 +95,14 @@ const OFFER_LABEL = {
 }
 
 function OfferStatusBadge({ status }) {
+  const { t } = useLanguage()
   return (
     <span
       className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
         OFFER_TONE[status] || 'bg-ink-100 text-ink-700'
       }`}
     >
-      {OFFER_LABEL[status] || status}
+      {t(OFFER_LABEL[status] || status)}
     </span>
   )
 }
@@ -108,6 +111,7 @@ const INPUT =
   'w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:bg-ink-50 disabled:opacity-60'
 
 function MakeOfferForm({ demand, onSubmitted }) {
+  const { t } = useLanguage()
   const dispatch = useDispatch()
   const { rfqActionStatus, rfqActionError } = useSelector((s) => s.demands)
   const [price, setPrice] = useState('')
@@ -144,22 +148,21 @@ function MakeOfferForm({ demand, onSubmitted }) {
 
   return (
     <form onSubmit={submit} className="ac-card p-5">
-      <p className="ac-section-label">Make an offer</p>
+      <p className="ac-section-label">{t("Make an offer")}</p>
       {demand.status !== 'ACTIVE' && (
         <p className="mt-2 text-sm text-rust-800">
-          This demand is {DEMAND_LABEL[demand.status] || demand.status} — offers
-          are not accepted.
+          {t("This demand is")} {t(DEMAND_LABEL[demand.status] || demand.status)} — {t("offers are not accepted.")}
         </p>
       )}
       {demand.status === 'ACTIVE' && remaining === 0 && (
         <p className="mt-2 text-sm text-honey-800">
-          The buyer has already filled this demand.
+          {t("The buyer has already filled this demand.")}
         </p>
       )}
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-700">
-            Your price (₹/kg)
+            {t("Your price (₹/kg)")}
           </label>
           <input
             type="number"
@@ -175,7 +178,7 @@ function MakeOfferForm({ demand, onSubmitted }) {
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-700">
-            Quantity (kg, max {remaining})
+            {t("Quantity (kg)")} ({t("max")} {remaining})
           </label>
           <input
             type="number"
@@ -192,7 +195,7 @@ function MakeOfferForm({ demand, onSubmitted }) {
       </div>
       <div className="mt-3">
         <label className="mb-1 block text-xs font-medium text-ink-700">
-          Message (optional)
+          {t("Message (optional)")}
         </label>
         <textarea
           rows={2}
@@ -200,7 +203,7 @@ function MakeOfferForm({ demand, onSubmitted }) {
           onChange={(e) => setMessage(e.target.value)}
           disabled={disabled}
           className={INPUT}
-          placeholder="Tell the buyer about availability, transport, etc."
+          placeholder={t("Tell the buyer about availability, transport, etc.")}
         />
       </div>
       {rfqActionError && (
@@ -212,10 +215,10 @@ function MakeOfferForm({ demand, onSubmitted }) {
           disabled={disabled}
           className="ac-btn-primary disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {rfqActionStatus === 'loading' ? 'Submitting…' : 'Submit offer'}
+          {rfqActionStatus === 'loading' ? t('Submitting…') : t('Submit offer')}
         </button>
         <p className="text-xs text-ink-500">
-          Your offer will be visible to the buyer immediately.
+          {t("Your offer will be visible to the buyer immediately.")}
         </p>
       </div>
     </form>
@@ -223,6 +226,7 @@ function MakeOfferForm({ demand, onSubmitted }) {
 }
 
 function AuthorTag({ author }) {
+  const { t } = useLanguage()
   const tone =
     author === 'FARMER'
       ? 'bg-honey-100 text-honey-800'
@@ -233,12 +237,13 @@ function AuthorTag({ author }) {
     <span
       className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${tone}`}
     >
-      {author}
+      {t(author)}
     </span>
   )
 }
 
 function DemandDetails() {
+  const { t } = useLanguage()
   const { publicId } = useParams()
   const dispatch = useDispatch()
   usePageMeta({
@@ -301,7 +306,7 @@ function DemandDetails() {
   }
 
   const handleReject = async (offerId) => {
-    if (!confirm('Reject this offer?')) return
+    if (!confirm(t('Reject this offer?'))) return
     const res = await fetch(`/api/offers/${offerId}/reject`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -318,7 +323,7 @@ function DemandDetails() {
 
   const handleCounter = async (offerId) => {
     if (!counterPrice && !counterQuantity) {
-      alert('Enter a new price or quantity to counter with.')
+      alert(t('Enter a new price or quantity to counter with.'))
       return
     }
     const body = {
@@ -346,7 +351,7 @@ function DemandDetails() {
   }
 
   const handleClose = async () => {
-    if (!confirm('Close this demand? It will no longer accept offers.')) return
+    if (!confirm(t('Close this demand? It will no longer accept offers.'))) return
     const action = await dispatch(
       updateRfqDemand({ publicId, status: 'CLOSED' })
     )
@@ -356,22 +361,22 @@ function DemandDetails() {
     }
   }
 
+  const backTo = isSeller ? '/seller/demands' : isBuyer ? '/buyer/demands' : '/'
+
   const goBack = () => {
-    if (isSeller) navigate('/farmer/demands')
-    else if (isBuyer) navigate('/buyer/demands')
-    else navigate('/')
+    navigate(backTo)
   }
 
   if (rfqCurrentStatus === 'loading') {
     return (
       <>
         <PageHeader
-          eyebrow={isSeller ? 'Selling' : 'Buying'}
-          title="Demand"
-          subtitle="Loading demand…"
+          eyebrow={isSeller ? t('Selling') : t('Buying')}
+          title={t("Demand")}
+          subtitle={t("Loading demand…")}
         />
         <div className="ac-card p-8 text-center text-sm text-ink-500">
-          Loading demand…
+          {t("Loading demand…")}
         </div>
       </>
     )
@@ -381,15 +386,15 @@ function DemandDetails() {
     return (
       <>
         <PageHeader
-          eyebrow={isSeller ? 'Selling' : 'Buying'}
-          title="Demand"
-          back={{ to: goBack() || '/', label: 'Back' }}
+          eyebrow={isSeller ? t('Selling') : t('Buying')}
+          title={t("Demand")}
+          back={{ to: backTo, label: t('Back') }}
         />
         <div className="rounded-card border border-rust-200 bg-rust-50 p-4 text-sm text-rust-800">
           {rfqCurrentError}
         </div>
         <button onClick={goBack} className="ac-btn-ghost mt-4">
-          ← Go back
+          ← {t("Go back")}
         </button>
       </>
     )
@@ -400,14 +405,14 @@ function DemandDetails() {
   return (
     <>
       <PageHeader
-        eyebrow={isSeller ? 'Selling' : 'Buying'}
+        eyebrow={isSeller ? t('Selling') : t('Buying')}
         title={`${demand.crop_name}${
           demand.crop_variety ? ` · ${demand.crop_variety}` : ''
         }`}
-        description={`Buyer: ${demand.buyer_public_id} · ${
+        description={`${t('Buyer')}: ${demand.buyer_public_id} · ${
           demand.location || '—'
         }${demand.state ? `, ${demand.state}` : ''}`}
-        back={{ to: goBack() || '/', label: 'Back' }}
+        back={{ to: backTo, label: t('Back') }}
         actions={<DemandStatusBadge status={demand.status} />}
       />
 
@@ -430,13 +435,13 @@ function DemandDetails() {
               ) : null}
             </h2>
             <p className="mt-1 text-sm text-ink-600">
-              Buyer {demand.buyer_public_id} · {demand.location || '—'}
+              {t("Buyer")} {demand.buyer_public_id} · {demand.location || '—'}
               {demand.state ? `, ${demand.state}` : ''}
             </p>
             <dl className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                  Required
+                  {t("Required")}
                 </dt>
                 <dd className="mt-0.5 font-display text-base text-ink-900">
                   {demand.quantity_kg} kg
@@ -444,7 +449,7 @@ function DemandDetails() {
               </div>
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                  Filled
+                  {t("Filled")}
                 </dt>
                 <dd className="mt-0.5 font-display text-base text-success-700">
                   {demand.filled_quantity_kg} kg
@@ -452,7 +457,7 @@ function DemandDetails() {
               </div>
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                  Max ₹/kg
+                  {t("Max ₹/kg")}
                 </dt>
                 <dd className="mt-0.5 font-display text-base text-ink-900">
                   {demand.max_price_per_kg != null
@@ -462,7 +467,7 @@ function DemandDetails() {
               </div>
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                  Required by
+                  {t("Required by")}
                 </dt>
                 <dd className="mt-0.5 font-display text-base text-ink-900">
                   {demand.required_date || '—'}
@@ -471,7 +476,7 @@ function DemandDetails() {
             </dl>
             {demand.notes && (
               <p className="mt-3 text-sm text-ink-600">
-                <span className="text-xs font-medium text-ink-500">Notes:</span>{' '}
+                <span className="text-xs font-medium text-ink-500">{t("Notes")}:</span>{' '}
                 {demand.notes}
               </p>
             )}
@@ -485,7 +490,7 @@ function DemandDetails() {
                   disabled={rfqActionStatus === 'loading'}
                   className="ac-btn-danger disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Close demand
+                  {t("Close demand")}
                 </button>
               </div>
             )}
@@ -509,7 +514,7 @@ function DemandDetails() {
       {/* Offers list */}
       <section className="ac-card p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <p className="ac-section-label">Offers ({offers.length})</p>
+          <p className="ac-section-label">{t("Offers")} ({offers.length})</p>
         </div>
 
         {rfqActionError && (
@@ -517,14 +522,14 @@ function DemandDetails() {
         )}
 
         {rfqOffersStatus === 'loading' && (
-          <p className="mt-3 text-sm text-ink-500">Loading offers…</p>
+          <p className="mt-3 text-sm text-ink-500">{t("Loading offers…")}</p>
         )}
         {rfqOffersError && (
           <p className="mt-2 text-sm text-rust-700">{rfqOffersError}</p>
         )}
         {rfqOffersStatus === 'succeeded' && offers.length === 0 && (
           <p className="mt-3 text-sm text-ink-500">
-            No offers yet. Be the first to submit one.
+            {t("No offers yet. Be the first to submit one.")}
           </p>
         )}
 
@@ -549,7 +554,7 @@ function DemandDetails() {
                         ₹{o.current_price}/kg · {o.current_quantity} kg
                       </p>
                       <p className="text-xs text-ink-500">
-                        by {o.farmer_user_public_id || 'farmer'} ·{' '}
+                        {t("by")} {o.farmer_user_public_id || t('farmer')} ·{' '}
                         {new Date(o.created_at).toLocaleString()}
                       </p>
                     </div>
@@ -564,7 +569,7 @@ function DemandDetails() {
                           }
                           className="rounded-full bg-success-100 px-3 py-1 text-xs font-semibold text-success-700 transition hover:bg-success-200"
                         >
-                          View deal →
+                          {t("View deal")} →
                         </Link>
                       )}
                     </div>
@@ -594,13 +599,13 @@ function DemandDetails() {
                         onClick={() => handleAccept(o.public_id)}
                         className="ac-btn-primary"
                       >
-                        Accept
+                        {t("Accept")}
                       </button>
                       <button
                         onClick={() => handleReject(o.public_id)}
                         className="ac-btn-danger"
                       >
-                        Reject
+                        {t("Reject")}
                       </button>
                       <button
                         onClick={() =>
@@ -608,7 +613,7 @@ function DemandDetails() {
                         }
                         className="ac-btn-secondary"
                       >
-                        {isActive ? 'Cancel' : 'Counter'}
+                        {isActive ? t('Cancel') : t('Counter')}
                       </button>
                       <Link
                         to={
@@ -618,7 +623,7 @@ function DemandDetails() {
                         }
                         className="ac-btn-ghost"
                       >
-                        Open detail →
+                        {t("Open detail")} →
                       </Link>
                     </div>
                   )}
@@ -626,7 +631,7 @@ function DemandDetails() {
                   {canActOnOffer && isActive && (
                     <div className="mt-3 rounded-card border border-honey-200 bg-honey-50 p-3">
                       <p className="text-xs font-medium text-honey-800">
-                        Send a counter
+                        {t("Send a counter")}
                       </p>
                       <div className="mt-2 grid gap-2 sm:grid-cols-2">
                         <input
@@ -635,7 +640,7 @@ function DemandDetails() {
                           step="0.01"
                           value={counterPrice}
                           onChange={(e) => setCounterPrice(e.target.value)}
-                          placeholder={`price (was ₹${o.current_price})`}
+                          placeholder={`${t("price")} (${t("was")} ₹${o.current_price})`}
                           className={INPUT}
                         />
                         <input
@@ -645,7 +650,7 @@ function DemandDetails() {
                           onChange={(e) =>
                             setCounterQuantity(e.target.value)
                           }
-                          placeholder={`qty (was ${o.current_quantity})`}
+                          placeholder={`${t("qty")} (${t("was")} ${o.current_quantity})`}
                           className={INPUT}
                         />
                       </div>
@@ -653,14 +658,14 @@ function DemandDetails() {
                         rows={2}
                         value={counterMessage}
                         onChange={(e) => setCounterMessage(e.target.value)}
-                        placeholder="Message (optional)"
+                        placeholder={t("Message (optional)")}
                         className={INPUT + ' mt-2'}
                       />
                       <button
                         onClick={() => handleCounter(o.public_id)}
                         className="ac-btn-primary mt-2"
                       >
-                        Send counter
+                        {t("Send counter")}
                       </button>
                     </div>
                   )}

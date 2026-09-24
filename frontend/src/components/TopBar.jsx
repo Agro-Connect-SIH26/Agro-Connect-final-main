@@ -31,6 +31,7 @@ import {
   logout,
   switchRole,
 } from '../redux/slices/authSlice.js'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 import Brand from './Brand.jsx'
 
 function useOutsideClick(ref, handler) {
@@ -44,6 +45,7 @@ function useOutsideClick(ref, handler) {
 }
 
 function ProfileMenu({ name, email, role, onLogout, onSwitchRole }) {
+  const { t } = useLanguage()
   const [open, setOpen] = useState(false)
   const wrapRef = useRef(null)
   useOutsideClick(wrapRef, () => setOpen(false))
@@ -79,6 +81,16 @@ function ProfileMenu({ name, email, role, onLogout, onSwitchRole }) {
           </div>
           <div className="p-1">
             <Link
+              to={role === 'BUYER' ? '/buyer/profile' : '/seller/profile'}
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-earth-100"
+              role="menuitem"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4 text-ink-400" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>{t("View Profile")}</Link>
+            <Link
               to="/role"
               onClick={() => setOpen(false)}
               className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-earth-100"
@@ -86,9 +98,7 @@ function ProfileMenu({ name, email, role, onLogout, onSwitchRole }) {
             >
               <svg viewBox="0 0 24 24" className="h-4 w-4 text-ink-400" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
                 <path d="M4 7h12l-3-3M20 17H8l3 3" />
-              </svg>
-              Switch role
-            </Link>
+              </svg>{t("Switch role")}</Link>
             <button
               type="button"
               onClick={() => { onSwitchRole(); setOpen(false) }}
@@ -98,9 +108,7 @@ function ProfileMenu({ name, email, role, onLogout, onSwitchRole }) {
               <svg viewBox="0 0 24 24" className="h-4 w-4 text-ink-400" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
                 <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" />
                 <circle cx="12" cy="12" r="3" />
-              </svg>
-              Quick role switch
-            </button>
+              </svg>{t("Quick role switch")}</button>
             <button
               type="button"
               onClick={() => { onLogout(); setOpen(false) }}
@@ -110,9 +118,7 @@ function ProfileMenu({ name, email, role, onLogout, onSwitchRole }) {
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
                 <path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4" />
                 <path d="M10 17 5 12l5-5" /><path d="M5 12h11" />
-              </svg>
-              Sign out
-            </button>
+              </svg>{t("Sign out")}</button>
           </div>
         </div>
       )}
@@ -121,6 +127,8 @@ function ProfileMenu({ name, email, role, onLogout, onSwitchRole }) {
 }
 
 export default function TopBar({ title, subtitle, children, hideAuth = false }) {
+  const { t } = useLanguage()
+
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const location = useLocation()
@@ -128,6 +136,8 @@ export default function TopBar({ title, subtitle, children, hideAuth = false }) 
   const role = useSelector(selectRole)
   const name = useSelector(selectName)
   const email = useSelector(selectEmail)
+
+  const { lang, changeLang } = useLanguage()
 
   const onLogout = () => {
     dispatch(logout())
@@ -161,6 +171,27 @@ export default function TopBar({ title, subtitle, children, hideAuth = false }) 
           </div>
         )}
         <div className="ml-auto flex items-center gap-2">
+          {isAuthed && role === 'SELLER' && (
+            <Link
+              to="/seller/crop-lots/new"
+              className="mr-2 hidden items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-700 md:inline-flex"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              {t("Smart Sell")}
+            </Link>
+          )}
+          <select
+            value={lang}
+            onChange={(e) => changeLang(e.target.value)}
+            className="rounded-md border border-earth-200 bg-white px-2 py-1 text-xs font-medium text-ink-700 shadow-sm outline-none hover:bg-earth-50"
+            aria-label={t("Select Language")}
+          >
+            <option value="en">{t("English")}</option>
+            <option value="hi">हिंदी</option>
+            <option value="mr">मराठी</option>
+          </select>
           {children}
           {!hideAuth && isAuthed && (
             <ProfileMenu
@@ -177,12 +208,8 @@ export default function TopBar({ title, subtitle, children, hideAuth = false }) 
                 to="/login"
                 state={{ from: location.pathname }}
                 className="rounded-lg px-3 py-1.5 text-sm font-medium text-ink-700 hover:bg-earth-100"
-              >
-                Sign in
-              </Link>
-              <Link to="/register" className="ac-btn-primary py-1.5">
-                Get started
-              </Link>
+              >{t("Sign in")}</Link>
+              <Link to="/register" className="ac-btn-primary py-1.5">{t("Get started")}</Link>
             </div>
           )}
         </div>

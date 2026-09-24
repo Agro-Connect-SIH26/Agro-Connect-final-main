@@ -21,14 +21,25 @@ function setMode(m) {
 router.get(
   '/',
   asyncHandler(async (_req, res) => {
-    const dbUp = await pingMongo();
+    let dbUp = false;
+    let dbErr = null;
+    try {
+      dbUp = await pingMongo();
+      if (!dbUp) {
+        dbErr = lastErrorMessage() || 'database disconnected';
+      }
+    } catch (err) {
+      dbUp = false;
+      dbErr = err ? err.message : 'database check failed';
+    }
+
     res.status(dbUp ? 200 : 503).json({
       status: dbUp ? 'ok' : 'degraded',
       service: 'agroconnect-backend-node',
       version: '1.0.0',
       database: dbUp ? 'ok' : 'error',
-      db_mode: mode,
-      db_error: dbUp ? null : lastErrorMessage(),
+      db_mode: mode || 'unknown',
+      db_error: dbUp ? null : dbErr,
       timestamp: new Date().toISOString(),
     });
   })

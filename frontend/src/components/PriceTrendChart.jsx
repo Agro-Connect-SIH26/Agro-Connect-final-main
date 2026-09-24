@@ -15,7 +15,7 @@
  *   - `source` and `is_live` flags from the row are surfaced in
  *     the chart footer so the user can verify provenance.
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import {
   LineChart,
   Line,
@@ -31,6 +31,42 @@ import { fmtInr } from '../utils/format.js'
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import useCountUp from '../hooks/useCountUp.js'
 import { SkeletonLine } from './Skeleton.jsx'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
+
+function aggregate(data) {
+  if (data.length <= 1) return data
+
+  // 1. Daily Aggregation
+  const daily = {}
+  for (const p of data) {
+    if (!daily[p.date]) daily[p.date] = []
+    daily[p.date].push(Number(p.price_per_kg))
+  }
+
+  let dailyPoints = Object.entries(daily).map(([date, prices]) => ({
+    date,
+    price_per_kg: prices.reduce((a, b) => a + b, 0) / prices.length,
+    source: data.find(p => p.date === date)?.source
+  })).sort((a,b) => new Date(a.date) - new Date(b.date))
+
+  if (dailyPoints.length <= 60) return dailyPoints
+
+  // 2. Weekly Aggregation
+  const weekly = {}
+  for (const p of dailyPoints) {
+    const d = new Date(p.date)
+    const weekStart = new Date(d.setUTCDate(d.getUTCDate() - d.getUTCDay()))
+      .toISOString().split('T')[0]
+
+    if (!weekly[weekStart]) weekly[weekStart] = []
+    weekly[weekStart].push(p.price_per_kg)
+  }
+
+  return Object.entries(weekly).map(([date, prices]) => ({
+    date,
+    price_per_kg: prices.reduce((a, b) => a + b, 0) / prices.length,
+  })).sort((a,b) => new Date(a.date) - new Date(b.date))
+}
 
 function direction(points) {
   if (!points || points.length < 2) return 'flat'
@@ -83,8 +119,10 @@ export default function PriceTrendChart({
   market,
   from,
   to,
-  height = 220,
+  height = 280,
 }) {
+  const { t } = useLanguage()
+
   const [points, setPoints] = useState([])
   const [status, setStatus] = useState('loading')
   const [err, setErr] = useState(null)
@@ -133,6 +171,7 @@ export default function PriceTrendChart({
   // so they live at the top of the function body, before any early
   // return. When data is missing we pass 0 (a finite, animation-safe
   // number) and simply don't render the animated headline.
+  const chartPoints = useMemo(() => aggregate(points), [points])
   const dir = direction(points)
   const firstRaw = points[0]?.price_per_kg
   const lastRaw = points[points.length - 1]?.price_per_kg
@@ -148,7 +187,7 @@ export default function PriceTrendChart({
       <div
         className="rounded-card border border-ink-100 bg-white p-3"
         style={{ minHeight: height }}
-        aria-label="Loading price history"
+        aria-label={t("Loading price history")}
       >
         <div className="mb-2 flex items-baseline justify-between gap-2">
           <SkeletonLine width="40%" height="h-4" />
@@ -192,9 +231,7 @@ export default function PriceTrendChart({
   if (points.length === 1) {
     return (
       <div className="rounded-card border border-ink-100 bg-earth-50 p-4">
-        <p className="text-xs text-ink-500">
-          Only 1 observed price point on record.
-        </p>
+        <p className="text-xs text-ink-500">{t("Only 1 observed price point on record.")}</p>
         <p className="mt-1 font-display text-2xl text-ink-900">
           {fmtInr(first.price_per_kg)}/kg
         </p>
@@ -222,7 +259,7 @@ export default function PriceTrendChart({
       <div style={{ width: '100%', height }}>
         <ResponsiveContainer>
           <LineChart
-            data={points}
+            data={chartPoints}
             margin={{ top: 10, right: 8, left: 0, bottom: 0 }}
           >
             <CartesianGrid stroke="#e5e0d3" strokeDasharray="3 3" />
@@ -256,7 +293,7 @@ export default function PriceTrendChart({
               dataKey="price_per_kg"
               stroke="#1f6f43"
               strokeWidth={2}
-              dot={{ r: 2, fill: '#1f6f43' }}
+              dot={{ r: 1.5, fill: '#1f6f43' }}
               activeDot={{ r: 4 }}
               isAnimationActive={true}
               animationDuration={500}
@@ -264,10 +301,17 @@ export default function PriceTrendChart({
           </LineChart>
         </ResponsiveContainer>
       </div>
-      <p className="mt-1 text-xs text-ink-500">
-        Observed prices only{isLive ? ' · Live AGMARKNET' : ' · Sample data'}. Source: {source || 'unknown'}.
-        Forward projection is shown on the page below — never here.
-      </p>
+      <div className="mt-4 space-y-1">
+        <p className="text-xs font-semibold text-ink-700">
+          {t("Observed market prices")}
+        </p>
+        <p className="text-xs text-ink-500">
+          {t("Chart uses aggregated observations for readability; source records remain unchanged.")}
+        </p>
+        <p className="text-xs text-ink-500">
+          {isLive ? 'Live AGMARKNET' : 'Sample data'} · Source: {source || 'unknown'}
+        </p>
+      </div>
     </div>
   )
 }

@@ -26,6 +26,8 @@ const { router: issuesRouter } = require('./issues');
 const { router: dealAuditRouter } = require('./dealAudit');
 const { router: coldStorageRouter } = require('./coldStorage');
 const { router: credibilityRouter } = require('./credibility');
+const { router: serviceProvidersRouter } = require('./serviceProviders');
+const { router: serviceRequestsRouter } = require('./serviceRequests');
 
 const router = express.Router();
 
@@ -58,6 +60,8 @@ router.use('/deals', issuesRouter);            // /:publicId/issues/*
 router.use('/deals', dealAuditRouter);         // /:publicId/audit
 router.use('/cold-storage', coldStorageRouter);
 router.use('/credibility', credibilityRouter);
+router.use('/service-providers', serviceProvidersRouter);
+router.use('/service-requests', serviceRequestsRouter);
 // /farmers/:publicId/credibility — alias for the farmer-card lookup.
 // The credibility service is mounted at /credibility/users/:publicId
 // for the canonical address; the farmer-card path is a more

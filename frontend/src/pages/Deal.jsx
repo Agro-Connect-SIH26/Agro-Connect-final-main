@@ -37,7 +37,9 @@ import FarmerCard from '../components/FarmerCard.jsx'
 import DealVerificationForm from '../components/DealVerificationForm.jsx'
 import IssueFlow from '../components/IssueFlow.jsx'
 import DealAuditTrail from '../components/DealAuditTrail.jsx'
+import DealPipeline from '../components/DealPipeline.jsx'
 import usePageMeta from '../hooks/usePageMeta.js'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 const DELIVERY_OPTIONS = [
   'PENDING',
@@ -52,6 +54,7 @@ const SELECT =
   'mt-2 w-full rounded-lg border border-ink-200 bg-white px-2 py-1.5 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500'
 
 function StatusField({ label, value, options, onChange, disabled, tone }) {
+  const { t } = useLanguage()
   return (
     <div className="rounded-card border border-ink-200 p-3">
       <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
@@ -71,23 +74,24 @@ function StatusField({ label, value, options, onChange, disabled, tone }) {
       >
         {options.map((o) => (
           <option key={o} value={o}>
-            {o}
+            {t(o)}
           </option>
         ))}
       </select>
       {disabled && (
-        <p className="mt-1 text-xs text-ink-400">Locked</p>
+        <p className="mt-1 text-xs text-ink-400">{t("Locked")}</p>
       )}
     </div>
   )
 }
 
 function Deal() {
+  const { t } = useLanguage()
   const { publicId } = useParams()
   const dispatch = useDispatch()
   usePageMeta({
-    title: 'Deal',
-    description: 'Status board, parties, money, and delivery & payment updates for this deal.',
+    title: t('Deal'),
+    description: t('Status board, parties, money, and delivery & payment updates for this deal.'),
   })
   const navigate = useNavigate()
   const isBuyer = useSelector(selectIsBuyer)
@@ -146,12 +150,12 @@ function Deal() {
         } catch (e) {
           if (!cancelled) {
             setLogisticsErr(
-              e.response?.data?.detail || 'Could not estimate logistics.'
+              e.response?.data?.detail || t('Could not estimate logistics.')
             )
           }
         }
       } else {
-        setLogisticsErr('Pickup location not set on the crop lot.')
+        setLogisticsErr(t('Pickup location not set on the crop lot.'))
       }
       try {
         const r2 = await api.post('/cold-storage/estimate', {
@@ -166,7 +170,7 @@ function Deal() {
       } catch (e) {
         if (!cancelled) {
           setColdStorageErr(
-            e.response?.data?.detail || 'Cold-storage estimate unavailable.'
+            e.response?.data?.detail || t('Cold-storage estimate unavailable.')
           )
         }
       }
@@ -175,7 +179,7 @@ function Deal() {
     return () => {
       cancelled = true
     }
-  }, [enriched])
+  }, [enriched, t])
 
   const update = (body) => {
     dispatch(updateDealStatus({ publicId, ...body }))
@@ -185,12 +189,12 @@ function Deal() {
     return (
       <>
         <PageHeader
-          eyebrow="Deals"
-          title="Deal"
-          subtitle="Loading deal…"
+          eyebrow={t("Deals")}
+          title={t("Deal")}
+          subtitle={t("Loading deal…")}
         />
         <div className="ac-card p-8 text-center text-sm text-ink-500">
-          Loading deal…
+          {t("Loading deal…")}
         </div>
       </>
     )
@@ -198,12 +202,12 @@ function Deal() {
   if (enrichedStatus === 'failed' && !enriched) {
     return (
       <>
-        <PageHeader eyebrow="Deals" title="Deal" />
+        <PageHeader eyebrow={t("Deals")} title={t("Deal")} />
         <div className="mx-auto max-w-xl rounded-card border border-rust-200 bg-rust-50 p-5 text-rust-800">
-          <p className="font-medium">Could not load this deal.</p>
+          <p className="font-medium">{t("Could not load this deal.")}</p>
           <p className="mt-1 text-sm">{enrichedError}</p>
           <button onClick={() => navigate(-1)} className="ac-btn-ghost mt-3">
-            ← Go back
+            ← {t("Go back")}
           </button>
         </div>
       </>
@@ -220,14 +224,14 @@ function Deal() {
   return (
     <>
       <PageHeader
-        eyebrow={lot.crop_name || 'Deals'}
-        title={`Deal · ${buyer.name || enriched.buyer_id || 'buyer'}`}
+        eyebrow={lot.crop_name || t('Deals')}
+        title={`${t("Deal")} · ${buyer.name || enriched.buyer_id || t('buyer')}`}
         subtitle={
           lot.crop_name
             ? `${lot.crop_name}${lot.crop_variety ? ` · ${lot.crop_variety}` : ''} · ${lot.quantity || ''} ${lot.quantity_unit || ''}`
-            : 'Status board for this deal.'
+            : t('Status board for this deal.')
         }
-        back={{ to: backLink, label: 'All deals' }}
+        back={{ to: backLink, label: t('All deals') }}
         actions={
           <span className="rounded-full bg-ink-100 px-3 py-1 font-mono text-xs text-ink-600">
             {enriched.public_id}
@@ -237,9 +241,12 @@ function Deal() {
 
       {locked && (
         <div className="mb-4 rounded-card border border-success-200 bg-success-50 p-4 text-sm text-success-700">
-          ✓ Deal is COMPLETED. Status fields are locked from further changes.
+          ✓ {t("Deal is COMPLETED. Status fields are locked from further changes.")}
         </div>
       )}
+
+      {/* Deal Pipeline Visual Escrow Tracker */}
+      <DealPipeline deliveryStatus={enriched.delivery_status} paymentStatus={enriched.payment_status} />
 
       {lot.crop_name && (
         <div className="ac-card mb-6 flex items-center gap-4 p-4">
@@ -262,7 +269,7 @@ function Deal() {
                     to={`/seller/crop-lots/${lot.public_id}`}
                     className="text-primary-700 hover:underline"
                   >
-                    Open crop lot
+                    {t("Open crop lot")}
                   </Link>
                 </>
               ) : null}
@@ -276,7 +283,7 @@ function Deal() {
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
-              Crop
+              {t("Crop")}
             </p>
             <p className="mt-1 font-display text-lg text-ink-900">
               {lot.crop_name || '—'}
@@ -287,7 +294,7 @@ function Deal() {
           </div>
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
-              Buyer
+              {t("Buyer")}
             </p>
             <p className="mt-1 font-display text-lg text-ink-900">
               {buyer.name || enriched.buyer_id || '—'}
@@ -301,7 +308,7 @@ function Deal() {
           </div>
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
-              Offer
+              {t("Offer")}
             </p>
             {offer ? (
               <>
@@ -313,12 +320,12 @@ function Deal() {
                     to={`/seller/offers/${offer.public_id}`}
                     className="mt-1 inline-block text-xs text-primary-700 hover:underline"
                   >
-                    Open offer
+                    {t("Open offer")}
                   </Link>
                 )}
               </>
             ) : (
-              <p className="mt-1 text-sm text-ink-500">—</p>
+              <p className="mt-1 text-sm text-ink-500">{t("—")}</p>
             )}
           </div>
         </div>
@@ -329,7 +336,7 @@ function Deal() {
         <div className="grid gap-3 sm:grid-cols-3">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
-              Agreed ₹/kg
+              {t("Agreed ₹/kg")}
             </p>
             <p className="mt-1 font-display text-lg text-ink-900">
               {fmtInr(enriched.agreed_price_per_kg)}
@@ -337,15 +344,15 @@ function Deal() {
           </div>
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
-              Quantity
+              {t("Quantity")}
             </p>
             <p className="mt-1 font-display text-lg text-ink-900">
-              {enriched.agreed_quantity} {lot.quantity_unit || 'kg'}
+              {enriched.agreed_quantity} {lot.quantity_unit || t('kg')}
             </p>
           </div>
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
-              Total value
+              {t("Total value")}
             </p>
             <p className="mt-1 font-display text-lg text-success-700">
               {fmtInr(enriched.total_value || 0)}
@@ -358,7 +365,7 @@ function Deal() {
       <section className="mb-6 grid gap-3 sm:grid-cols-2">
         <div className="rounded-card border border-ink-200 bg-white p-3">
           <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
-            Pickup location
+            {t("Pickup location")}
           </p>
           <p className="mt-1 font-display text-lg text-ink-900">
             {lot.location || '—'}
@@ -369,7 +376,7 @@ function Deal() {
         </div>
         <div className="rounded-card border border-ink-200 bg-white p-3">
           <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
-            Delivery location
+            {t("Delivery location")}
           </p>
           <p className="mt-1 font-display text-lg text-ink-900">
             {buyer.location || enriched.notes || '—'}
@@ -383,7 +390,7 @@ function Deal() {
       {/* Status updates */}
       <section className="mb-6 grid gap-3 sm:grid-cols-2">
         <StatusField
-          label="Delivery status"
+          label={t("Delivery status")}
           value={enriched.delivery_status}
           options={DELIVERY_OPTIONS}
           onChange={(v) => update({ delivery_status: v })}
@@ -391,7 +398,7 @@ function Deal() {
           tone="text-primary-700"
         />
         <StatusField
-          label="Payment status"
+          label={t("Payment status")}
           value={enriched.payment_status}
           options={PAYMENT_OPTIONS}
           onChange={(v) => update({ payment_status: v })}
@@ -453,33 +460,33 @@ function Deal() {
         </div>
       )}
       {updateStatus === 'loading' && (
-        <p className="mb-4 text-sm text-ink-500">Updating…</p>
+        <p className="mb-4 text-sm text-ink-500">{t("Updating…")}</p>
       )}
 
       {/* Logistics estimate */}
       <section className="ac-card mb-4 p-5">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-display text-base text-ink-900">
-            Logistics estimate
+            {t("Logistics estimate")}
           </h2>
-          <span className="ac-chip ac-chip-honey">Estimate</span>
+          <span className="ac-chip ac-chip-honey">{t("Estimate")}</span>
         </div>
         {logistics && (
           <div className="mt-2 grid gap-2 text-sm sm:grid-cols-3">
             <div>
-              <p className="text-xs text-ink-500">Distance</p>
+              <p className="text-xs text-ink-500">{t("Distance")}</p>
               <p className="font-medium text-ink-900">
                 {Number(logistics.distance_km || 0).toFixed(0)} km
               </p>
             </div>
             <div>
-              <p className="text-xs text-ink-500">Transport</p>
+              <p className="text-xs text-ink-500">{t("Transport")}</p>
               <p className="font-medium text-ink-900">
                 {fmtInr(logistics.transport_cost || 0)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-ink-500">Total estimated</p>
+              <p className="text-xs text-ink-500">{t("Total estimated")}</p>
               <p className="font-medium text-ink-900">
                 {fmtInr(logistics.total_cost || 0)}
               </p>
@@ -495,14 +502,14 @@ function Deal() {
       <section className="ac-card mb-4 p-5">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-display text-base text-ink-900">
-            Cold-storage estimate
+            {t("Cold-storage estimate")}
           </h2>
-          <span className="ac-chip ac-chip-honey">Estimate</span>
+          <span className="ac-chip ac-chip-honey">{t("Estimate")}</span>
         </div>
         {coldStorage && (
           <div className="mt-2 grid gap-2 text-sm sm:grid-cols-3">
             <div>
-              <p className="text-xs text-ink-500">Nearest facility</p>
+              <p className="text-xs text-ink-500">{t("Nearest facility")}</p>
               <p className="font-medium text-ink-900">
                 {coldStorage.facility_name || '—'}
               </p>
@@ -511,7 +518,7 @@ function Deal() {
               )}
             </div>
             <div>
-              <p className="text-xs text-ink-500">Capacity</p>
+              <p className="text-xs text-ink-500">{t("Capacity")}</p>
               <p className="font-medium text-ink-900">
                 {coldStorage.capacity_kg
                   ? `${coldStorage.capacity_kg} kg`
@@ -519,7 +526,7 @@ function Deal() {
               </p>
             </div>
             <div>
-              <p className="text-xs text-ink-500">Cost</p>
+              <p className="text-xs text-ink-500">{t("Cost")}</p>
               <p className="font-medium text-ink-900">
                 {fmtInr(coldStorage.cost || 0)}
               </p>
@@ -532,12 +539,12 @@ function Deal() {
       </section>
 
       <section className="ac-card p-5">
-        <h2 className="font-display text-base text-ink-900">Timestamps</h2>
+        <h2 className="font-display text-base text-ink-900">{t("Timestamps")}</h2>
         <p className="mt-1 text-sm text-ink-700">
-          Created: {new Date(enriched.created_at).toLocaleString()}
+          {t("Created")}: {new Date(enriched.created_at).toLocaleString()}
         </p>
         <p className="text-sm text-ink-700">
-          Updated: {new Date(enriched.updated_at).toLocaleString()}
+          {t("Updated")}: {new Date(enriched.updated_at).toLocaleString()}
         </p>
       </section>
     </>

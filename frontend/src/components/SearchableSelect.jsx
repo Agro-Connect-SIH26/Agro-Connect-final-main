@@ -14,6 +14,7 @@
  * using IntersectionObserver for progressive loading if needed.
  */
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 const VISIBLE_COUNT = 50 // Render max 50 items at once
 
@@ -23,12 +24,14 @@ function SearchableSelect({
   value,
   onChange,
   options = [],
-  placeholder = 'Search...',
+  placeholder,
   disabled = false,
   required = false,
   className = '',
   'aria-describedby': ariaDescribedBy,
 }) {
+  const { t } = useLanguage()
+  const defaultPlaceholder = placeholder || t('Search...')
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [highlightedIndex, setHighlightedIndex] = useState(0)
@@ -166,7 +169,7 @@ function SearchableSelect({
           onChange={handleInputChange}
           onFocus={handleFocus}
           onKeyDown={handleKeyDown}
-          placeholder={showPlaceholder ? placeholder : ''}
+          placeholder={showPlaceholder ? defaultPlaceholder : ''}
           disabled={disabled}
           autoComplete="off"
           aria-expanded={isOpen}
@@ -205,12 +208,12 @@ function SearchableSelect({
           ref={listRef}
           id={`${id}-listbox`}
           role="listbox"
-          aria-label={label || 'Options'}
+          aria-label={label || t('Options')}
           className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-ink-200 bg-white shadow-lg"
         >
           {visibleOptions.length === 0 ? (
             <li className="px-4 py-3 text-sm text-ink-500">
-              {search ? 'No matches found' : 'No options available'}
+              {search ? t('No matches found') : t('No options available')}
             </li>
           ) : (
             <>

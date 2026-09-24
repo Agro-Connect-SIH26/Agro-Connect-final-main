@@ -11,6 +11,8 @@ import qualityReducer from './slices/qualitySlice.js'
 import dealReducer from './slices/dealSlice.js'
 import authReducer from './slices/authSlice.js'
 import demandReducer from './slices/demandSlice.js'
+import serviceProviderReducer from './slices/serviceProviderSlice.js'
+import serviceRequestReducer from './slices/serviceRequestSlice.js'
 
 export const store = configureStore({
   reducer: {
@@ -26,5 +28,7 @@ export const store = configureStore({
     quality: qualityReducer,
     deals: dealReducer,
     demands: demandReducer,
+    serviceProviders: serviceProviderReducer,
+    serviceRequests: serviceRequestReducer,
   },
 })

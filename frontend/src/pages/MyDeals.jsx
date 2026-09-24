@@ -14,6 +14,7 @@ import {
 } from '../redux/slices/authSlice.js'
 import PageHeader from '../components/PageHeader.jsx'
 import usePageMeta from '../hooks/usePageMeta.js'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 const DELIVERY_STYLES = {
   PENDING: 'bg-earth-100 text-ink-700',
@@ -34,12 +35,13 @@ const PAYMENT_STYLES = {
 const NEUTRAL_STATUS = 'bg-earth-100 text-ink-700'
 
 function MyDeals() {
+  const { t } = useLanguage()
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const isBuyer = useSelector(selectIsBuyer)
   usePageMeta({
-    title: 'My deals',
-    description: 'Track delivery and payment for every deal you are part of — buying or selling.',
+    title: t('My deals'),
+    description: t('Track delivery and payment for every deal you are part of — buying or selling.'),
   })
   const isSeller = useSelector(selectIsSeller)
   const activeBuyer = useSelector(selectActiveBuyer)
@@ -62,43 +64,43 @@ function MyDeals() {
     return () => { dispatch(clearEnrichedDeal()) }
   }, [dispatch, isBuyer, isSeller, activeBuyer?.id, farmerPublicId])
 
-  const title = isSeller ? 'My Deals' : 'My Purchases'
+  const title = isSeller ? t('My Deals') : t('My Purchases')
   const sub = isSeller
-    ? 'Deals you have sold, across all your crop lots. Track delivery and payment.'
-    : 'Deals you are buying, as ' + (activeBuyer?.name || 'no active buyer') + '.'
+    ? t('Deals you have sold, across all your crop lots. Track delivery and payment.')
+    : `${t('Deals you are buying, as')} ${activeBuyer?.name || t('no active buyer')}.`
 
   return (
     <>
       <PageHeader
-        eyebrow="Deals"
+        eyebrow={t("Deals")}
         title={title}
         description={sub}
-        back={{ to: isSeller ? '/seller' : '/buyer', label: 'Back to dashboard' }}
+        back={{ to: isSeller ? '/seller' : '/buyer', label: t('Back to dashboard') }}
       />
       <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
 
         {isBuyer && !activeBuyer && (
           <div className="mb-4 rounded-card border border-honey-200 bg-honey-50 p-3 text-sm text-honey-800">
-            No active buyer selected. <Link to="/buyer" className="font-medium underline">Pick a buyer first</Link>.
+            {t("No active buyer selected.")} <Link to="/buyer" className="font-medium underline">{t("Pick a buyer first")}</Link>.
           </div>
         )}
 
         {enrichedListStatus === 'loading' && (
           <div className="ac-card p-8 text-center text-sm text-ink-500">
-            Loading deals…
+            {t("Loading deals…")}
           </div>
         )}
         {enrichedListError && (
           <div className="rounded-card border border-rust-200 bg-rust-50 p-6 text-sm text-rust-800">
-            {enrichedListError}
+            {t(enrichedListError)}
           </div>
         )}
 
         {enrichedListStatus === 'succeeded' && enrichedList.length === 0 && (
           <div className="ac-card p-12 text-center">
-            <p className="font-display text-lg text-ink-900">No deals yet</p>
+            <p className="font-display text-lg text-ink-900">{t("No deals yet")}</p>
             <p className="mt-2 text-sm text-ink-600">
-              Deals are created automatically when an offer is accepted.
+              {t("Deals are created automatically when an offer is accepted.")}
             </p>
           </div>
         )}
@@ -108,22 +110,22 @@ function MyDeals() {
             {enrichedList.map((d) => (
               <Link
                 key={d.public_id}
-                to={`/${isSeller ? 'farmer' : 'buyer'}/deals/${d.public_id}`}
+                to={`/${isSeller ? 'seller' : 'buyer'}/deals/${d.public_id}`}
                 className="ac-card ac-card-hover block p-5"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="font-mono text-sm text-ink-700">{d.public_id}</p>
                     <p className="mt-1 font-medium text-ink-900">
-                      {d.crop_lot?.crop_name || 'Crop lot'}{' '}
+                      {d.crop_lot?.crop_name || t('Crop lot')}{' '}
                       {d.crop_lot?.quantity
-                        ? `· ${d.crop_lot.quantity}${d.crop_lot.quantity_unit || 'kg'}`
+                        ? `· ${d.crop_lot.quantity}${d.crop_lot.quantity_unit || t('kg')}`
                         : ''}
                     </p>
                     <p className="text-xs text-ink-500">
                       {isSeller
-                        ? `Buyer: ${d.buyer?.name || '—'}`
-                        : `Seller lot: ${d.crop_lot?.public_id || '—'}`}
+                        ? `${t("Buyer")}: ${d.buyer?.name || '—'}`
+                        : `${t("Seller lot")}: ${d.crop_lot?.public_id || '—'}`}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -132,32 +134,32 @@ function MyDeals() {
                         DELIVERY_STYLES[d.delivery_status] || NEUTRAL_STATUS
                       }`}
                     >
-                      {d.delivery_status}
+                      {t(d.delivery_status)}
                     </span>
                     <span
                       className={`rounded-full px-3 py-1 text-xs font-semibold ${
                         PAYMENT_STYLES[d.payment_status] || NEUTRAL_STATUS
                       }`}
                     >
-                      pay: {d.payment_status}
+                      {t("pay")}: {t(d.payment_status)}
                     </span>
                   </div>
                 </div>
                 <div className="mt-3 grid gap-2 sm:grid-cols-3">
                   <div>
-                    <p className="text-xs text-ink-500">Agreed ₹/kg</p>
+                    <p className="text-xs text-ink-500">{t("Agreed ₹/kg")}</p>
                     <p className="font-medium text-ink-900">
                       ₹{d.agreed_price_per_kg}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-ink-500">Quantity</p>
+                    <p className="text-xs text-ink-500">{t("Quantity")}</p>
                     <p className="font-medium text-ink-900">
-                      {d.agreed_quantity} {d.crop_lot?.quantity_unit || 'kg'}
+                      {d.agreed_quantity} {d.crop_lot?.quantity_unit || t('kg')}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-ink-500">Total</p>
+                    <p className="text-xs text-ink-500">{t("Total")}</p>
                     <p className="font-medium text-success-700">
                       ₹{Number(d.total_value || 0).toFixed(0)}
                     </p>

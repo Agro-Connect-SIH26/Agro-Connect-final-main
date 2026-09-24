@@ -22,6 +22,7 @@ import { fmtInr, fmtPerKg, fmtKg } from '../utils/format.js'
 import PageHeader from '../components/PageHeader.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import usePageMeta from '../hooks/usePageMeta.js'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 import api from '../api/axios.js'
 
 const STATUS_TABS = [
@@ -44,12 +45,13 @@ const STATUS_TONE = {
 }
 
 function MyOffersIndex() {
+  const { t } = useLanguage()
   const dispatch = useDispatch()
   const isSeller = useSelector(selectIsSeller)
   const { list: lots, listStatus: lotsStatus } = useSelector((s) => s.cropLots)
   usePageMeta({
-    title: 'Offers inbox',
-    description: 'Every offer buyers have sent on your crop lots, in one place.',
+    title: t('Offers inbox'),
+    description: t('Every offer buyers have sent on your crop lots, in one place.'),
   })
 
   const [mergedOffers, setMergedOffers] = useState([])
@@ -157,9 +159,9 @@ function MyOffersIndex() {
   return (
     <>
       <PageHeader
-        eyebrow="Selling"
-        title="Offers"
-        subtitle="Every offer buyers have sent you, across all your crop lots. Open one to counter, accept, or reject."
+        eyebrow={t("Selling")}
+        title={t("Offers")}
+        subtitle={t("Every offer buyers have sent you, across all your crop lots. Open one to counter, accept, or reject.")}
       />
 
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -177,7 +179,7 @@ function MyOffersIndex() {
                     : 'rounded-full border border-primary-200 bg-white px-3 py-1 text-xs font-medium text-primary-700 transition hover:bg-primary-50'
                 }
               >
-                {s.label} · {counts[s.value] ?? 0}
+                {t(s.label)} · {counts[s.value] ?? 0}
               </button>
             )
           })}
@@ -187,7 +189,7 @@ function MyOffersIndex() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search crop, location, or buyer…"
+            placeholder={t("Search crop, location, or buyer…")}
             className="w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
           />
         </div>
@@ -205,7 +207,7 @@ function MyOffersIndex() {
       )}
 
       {error && (
-        <EmptyState kind="error" title="Could not load offers" description={error} />
+        <EmptyState kind="error" title={t("Could not load offers")} description={error ? t(error) : t('Please retry.')} />
       )}
 
       {!isLoading && !error && filtered.length === 0 && (
@@ -213,22 +215,22 @@ function MyOffersIndex() {
           kind="empty"
           title={
             mergedOffers.length === 0
-              ? 'No offers yet'
-              : 'No offers match the current filters'
+              ? t('No offers yet')
+              : t('No offers match the current filters')
           }
           description={
             mergedOffers.length === 0
-              ? 'When buyers make offers on your lots, they will appear here. You can also browse buyer demands to find ones that match your crops.'
-              : 'Try a different status or clear the search.'
+              ? t('When buyers make offers on your lots, they will appear here. You can also browse buyer demands to find ones that match your crops.')
+              : t('Try a different status or clear the search.')
           }
           action={
             mergedOffers.length === 0 ? (
               <div className="flex flex-wrap gap-2">
                 <Link to="/farmer/demands" className="ac-btn-primary">
-                  Browse buyer demands
+                  {t("Browse buyer demands")}
                 </Link>
                 <Link to="/seller/crop-lots" className="ac-btn-ghost">
-                  My Crops
+                  {t("My Crops")}
                 </Link>
               </div>
             ) : null
@@ -251,7 +253,7 @@ function MyOffersIndex() {
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                       <span className="font-display text-base text-ink-900">
-                        {lot.crop_name || 'Crop lot'}
+                        {lot.crop_name || t('Crop lot')}
                       </span>
                       {lot.crop_variety ? (
                         <span className="text-xs text-ink-500">
@@ -261,11 +263,11 @@ function MyOffersIndex() {
                       <span
                         className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${tone}`}
                       >
-                        {o.status}
+                        {t(o.status)}
                       </span>
                     </div>
                     <p className="mt-0.5 truncate text-xs text-ink-500">
-                      Buyer {o.buyer_public_id} ·{' '}
+                      {t("Buyer")} {o.buyer_public_id} ·{' '}
                       {lot.location || '—'} · {fmtKg(lot.quantity, lot.quantity_unit)}
                     </p>
                   </div>

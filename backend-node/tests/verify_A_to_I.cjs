@@ -308,6 +308,26 @@ async function main() {
       `decision=${dsRes.body?.decision} (no break-even expected)`);
   }
 
+  // C3. Regression test for outlier market prices (Tomato, Ranchi)
+  const lotRanchi = await createLot(`C-tomato-${ts}`, 5000, 'Ranchi, Jharkhand', 'Jharkhand');
+  // Overwrite crop name to guarantee we match the outlier market prices in the DB if the sanitize bug regresses
+  await request('PATCH', `/crop-lots/${lotRanchi.public_id}`, {
+    crop_name: 'Tomato',
+    expected_price_per_kg: 20
+  }, baseHeaders);
+
+  const dsRanchiRes = await request('GET', `/decision/${lotRanchi.id}`, null, baseHeaders);
+  const comparisonRows = dsRanchiRes.body?.market_comparison || [];
+
+  // We check that none of the comparison market prices or net_realisations are absurdly high.
+  // Using 10,000 as a very safe upper bound for real-world per-kg price.
+  const hasOutlierPrice = comparisonRows.some(r => r.modal_price > 10000 || r.net_realisation > 10000000);
+
+  step('C3', 'Decision Support filters corrupted outlier market prices (< ₹10k/kg)',
+    dsRanchiRes.status === 200 && comparisonRows.length >= 0 && !hasOutlierPrice,
+    `comparisonRows=${comparisonRows.length} hasOutlier=${hasOutlierPrice}`);
+
+
   // =================================================================
   // D. Storage Economics (configurable, no hardcoded rate)
   // =================================================================

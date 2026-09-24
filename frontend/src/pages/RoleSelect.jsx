@@ -15,6 +15,7 @@ import { fetchBuyers } from '../redux/slices/buyerSlice.js'
 import { fetchFpos } from '../redux/slices/fpoSlice.js'
 import Brand from '../components/Brand.jsx'
 import usePageMeta from '../hooks/usePageMeta.js'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 /**
  * RoleSelect — entry page after Landing, and the "Switch role" page.
@@ -34,6 +35,7 @@ import usePageMeta from '../hooks/usePageMeta.js'
  *     they are sent straight to that role's dashboard.
  */
 function RoleSelect() {
+  const { t } = useLanguage()
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const role = useSelector(selectRole)
@@ -44,8 +46,8 @@ function RoleSelect() {
   const [searchParams] = useSearchParams()
   const isSwitching = searchParams.get('switch') === '1'
   usePageMeta({
-    title: isSwitching ? 'Switch role' : 'Choose your role',
-    description: 'Sign in as a farmer, buyer, or FPO. You can switch any time.',
+    title: isSwitching ? t('Switch role') : t('Choose your role'),
+    description: t('Sign in as a farmer, buyer, or FPO. You can switch any time.'),
   })
 
   const handleSignOut = () => {
@@ -93,30 +95,30 @@ function RoleSelect() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white">
+    <div className="min-h-screen bg-earth-50">
       <header className="border-b border-primary-100 bg-white/70 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-4">
-          <Link to="/" aria-label="AgroConnect home">
+          <Link to="/" aria-label={t("AgroConnect home")}>
             <Brand variant="mark" size="md" />
           </Link>
           <div className="flex flex-wrap items-center gap-2">
             {isSwitching && role && (
               <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-medium text-primary-800">
-                Currently signed in as {role}{displayName ? ` (${displayName})` : ''}
+                {t("Currently signed in as")} {t(role)}{displayName ? ` (${displayName})` : ''}
               </span>
             )}
             <Link
               to="/login"
               className="rounded-lg border border-primary-200 bg-white px-3 py-1.5 text-sm font-medium text-primary-700 transition hover:bg-primary-50"
             >
-              Sign in as different user
+              {t("Sign in as different user")}
             </Link>
             <button
               type="button"
               onClick={handleSignOut}
               className="rounded-lg border border-rust-200 bg-white px-3 py-1.5 text-sm font-medium text-rust-800 transition hover:bg-rust-50"
             >
-              Logout
+              {t("Logout")}
             </button>
           </div>
         </div>
@@ -125,12 +127,12 @@ function RoleSelect() {
       <main className="mx-auto max-w-6xl px-6 py-12">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-ink-900 sm:text-4xl">
-            {isSwitching ? 'Switch role' : 'How do you want to use AgroConnect?'}
+            {isSwitching ? t('Switch role') : t('How do you want to use AgroConnect?')}
           </h1>
           <p className="mt-3 text-lg text-ink-600">
             {isSwitching
-              ? 'You are currently signed in as ' + (role || 'none') + '. Choose a different role to continue.'
-              : 'Pick a role to continue. You can change this any time from the top bar.'}
+              ? `${t("You are currently signed in as")} ${t(role || 'none')}. ${t("Choose a different role to continue.")}`
+              : t("Pick a role to continue. You can change this any time from the top bar.")}
           </p>
         </div>
 
@@ -141,18 +143,18 @@ function RoleSelect() {
             className="rounded-2xl border-2 border-primary-200 bg-white p-8 text-left shadow-sm transition hover:border-primary-500 hover:shadow-md disabled:opacity-50"
           >
             <div className="text-4xl">🌾</div>
-            <h2 className="mt-3 text-2xl font-semibold text-ink-900">I'm a Seller (Farmer)</h2>
+            <h2 className="mt-3 text-2xl font-semibold text-ink-900">{t("I'm a Seller (Farmer)")}</h2>
             <p className="mt-2 text-sm text-ink-600">
-              List a crop lot, see buyer matches, accept offers, track delivery and payment.
+              {t("List a crop lot, see buyer matches, accept offers, track delivery and payment.")}
             </p>
             <ul className="mt-4 space-y-1 text-sm text-ink-700">
-              <li>• Create and manage crop lots</li>
-              <li>• See matched buyers and offers</li>
-              <li>• Negotiate and accept the best deal</li>
-              <li>• Track deal delivery and payment</li>
+              <li>• {t("Create and manage crop lots")}</li>
+              <li>• {t("See matched buyers and offers")}</li>
+              <li>• {t("Negotiate and accept the best deal")}</li>
+              <li>• {t("Track deal delivery and payment")}</li>
             </ul>
             <div className="mt-6 inline-flex items-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white">
-              Continue as Seller →
+              {t("Continue as Seller")} →
             </div>
           </button>
 
@@ -162,18 +164,18 @@ function RoleSelect() {
             className="rounded-2xl border-2 border-primary-200 bg-white p-8 text-left shadow-sm transition hover:border-primary-500 hover:shadow-md disabled:opacity-50"
           >
             <div className="text-4xl">🛒</div>
-            <h2 className="mt-3 text-2xl font-semibold text-ink-900">I'm a Buyer (Trader)</h2>
+            <h2 className="mt-3 text-2xl font-semibold text-ink-900">{t("I'm a Buyer (Trader)")}</h2>
             <p className="mt-2 text-sm text-ink-600">
-              Browse listed produce, place offers, negotiate, and accept the farmer's counter.
+              {t("Browse listed produce, place offers, negotiate, and accept the farmer's counter.")}
             </p>
             <ul className="mt-4 space-y-1 text-sm text-ink-700">
-              <li>• Browse available crop lots</li>
-              <li>• Place offers on produce</li>
-              <li>• Counter and accept prices</li>
-              <li>• Manage purchases and deliveries</li>
+              <li>• {t("Browse available crop lots")}</li>
+              <li>• {t("Place offers on produce")}</li>
+              <li>• {t("Counter and accept prices")}</li>
+              <li>• {t("Manage purchases and deliveries")}</li>
             </ul>
             <div className="mt-3 rounded-lg border border-primary-100 bg-primary-50 p-2 text-xs text-primary-800">
-              Optional: pick a sample buyer
+              {t("Optional: pick a sample buyer")}
             </div>
             <select
               value={selectedBuyer?.id || ''}
@@ -184,7 +186,7 @@ function RoleSelect() {
               className="mt-2 w-full rounded-lg border border-ink-200 px-2 py-1.5 text-sm"
               onClick={(e) => e.stopPropagation()}
             >
-              <option value="">(no buyer — use default)</option>
+              <option value="">{t("(no buyer — use default)")}</option>
               {buyers.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name} ({b.location})
@@ -192,7 +194,7 @@ function RoleSelect() {
               ))}
             </select>
             <div className="mt-3 inline-flex items-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white">
-              Continue as Buyer →
+              {t("Continue as Buyer")} →
             </div>
           </button>
 
@@ -202,18 +204,18 @@ function RoleSelect() {
             className="rounded-2xl border-2 border-primary-200 bg-white p-8 text-left shadow-sm transition hover:border-primary-500 hover:shadow-md disabled:opacity-50"
           >
             <div className="text-4xl">🤝</div>
-            <h2 className="mt-3 text-2xl font-semibold text-ink-900">I'm an FPO (Group)</h2>
+            <h2 className="mt-3 text-2xl font-semibold text-ink-900">{t("I'm an FPO (Group)")}</h2>
             <p className="mt-2 text-sm text-ink-600">
-              Aggregate member lots, group-sell, and reach larger buyers.
+              {t("Aggregate member lots, group-sell, and reach larger buyers.")}
             </p>
             <ul className="mt-4 space-y-1 text-sm text-ink-700">
-              <li>• Create or join an FPO</li>
-              <li>• Pool member crop lots</li>
-              <li>• Show aggregated quantity per crop</li>
-              <li>• Group-sell to larger buyers</li>
+              <li>• {t("Create or join an FPO")}</li>
+              <li>• {t("Pool member crop lots")}</li>
+              <li>• {t("Show aggregated quantity per crop")}</li>
+              <li>• {t("Group-sell to larger buyers")}</li>
             </ul>
             <div className="mt-3 rounded-lg border border-primary-100 bg-primary-50 p-2 text-xs text-primary-800">
-              Optional: pick a sample FPO
+              {t("Optional: pick a sample FPO")}
             </div>
             <select
               value={selectedFpo || ''}
@@ -221,7 +223,7 @@ function RoleSelect() {
               className="mt-2 w-full rounded-lg border border-ink-200 px-2 py-1.5 text-sm"
               onClick={(e) => e.stopPropagation()}
             >
-              <option value="">(no FPO — create one on dashboard)</option>
+              <option value="">{t("(no FPO — create one on dashboard)")}</option>
               {fpos.map((f) => (
                 <option key={f.public_id} value={f.public_id}>
                   {f.name} ({f.location})
@@ -229,7 +231,7 @@ function RoleSelect() {
               ))}
             </select>
             <div className="mt-3 inline-flex items-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white">
-              Continue as FPO →
+              {t("Continue as FPO")} →
             </div>
           </button>
         </div>
@@ -241,8 +243,7 @@ function RoleSelect() {
         )}
 
         <p className="mt-8 text-center text-xs text-ink-500">
-          This role gate scopes sample data; real authentication would
-          be wired to a regulated identity provider in production.
+          {t("This role gate scopes sample data; real authentication would be wired to a regulated identity provider in production.")}
         </p>
       </main>
     </div>

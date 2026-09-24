@@ -82,7 +82,10 @@ router.get(
 router.get(
   '/:public_id',
   asyncHandler(async (req, res) => {
-    const lot = await CropLot.findOne({ publicId: req.params.public_id });
+    let lot = await CropLot.findOne({ publicId: req.params.public_id });
+    if (!lot && require('mongoose').isValidObjectId(req.params.public_id)) {
+      lot = await CropLot.findById(req.params.public_id);
+    }
     if (!lot) throw new AppError(404, 'crop lot not found');
     res.json(lot.toRead());
   })
@@ -95,7 +98,10 @@ router.get(
 router.get(
   '/:public_id/farmer-card',
   asyncHandler(async (req, res) => {
-    const lot = await CropLot.findOne({ publicId: req.params.public_id });
+    let lot = await CropLot.findOne({ publicId: req.params.public_id });
+    if (!lot && require('mongoose').isValidObjectId(req.params.public_id)) {
+      lot = await CropLot.findById(req.params.public_id);
+    }
     if (!lot) throw new AppError(404, 'crop lot not found');
     const card = await farmerCardForLot(lot);
     if (!card.available) {

@@ -21,6 +21,7 @@ import api from '../api/axios.js'
 import { fmtInr } from '../utils/format.js'
 import { Award, AlertTriangle, Truck, ArrowRight } from 'lucide-react'
 import { SkeletonList } from './Skeleton.jsx'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 const FREIGHT_PER_KM_PER_KG = 0.012
 const R_KM = 6371
@@ -55,6 +56,8 @@ function findNearestMandi(lot, mandis) {
 }
 
 export default function OfferComparison({ lot, offers = [] }) {
+  const { t } = useLanguage()
+
   const [mandis, setMandis] = useState([])
   const [status, setStatus] = useState('loading')
 
@@ -127,9 +130,7 @@ export default function OfferComparison({ lot, offers = [] }) {
 
   if (!ranked.length) {
     return (
-      <div className="rounded-card border border-ink-100 bg-earth-50 p-3 text-sm text-ink-600">
-        No offers to compare yet.
-      </div>
+      <div className="rounded-card border border-ink-100 bg-earth-50 p-3 text-sm text-ink-600">{t("No offers to compare yet.")}</div>
     )
   }
 
@@ -151,9 +152,7 @@ export default function OfferComparison({ lot, offers = [] }) {
         )}
         {!nearest && (
           <span className="text-xs text-honey-800">
-            <AlertTriangle className="mr-0.5 inline h-3 w-3" />
-            No nearest mandi available — comparing quoted price only.
-          </span>
+            <AlertTriangle className="mr-0.5 inline h-3 w-3" />{t("No nearest mandi available — comparing quoted price only.")}</span>
         )}
       </div>
 
@@ -194,9 +193,7 @@ export default function OfferComparison({ lot, offers = [] }) {
                   </span>
                   {isBest && (
                     <span className="ac-chip ac-chip-success">
-                      <Award className="mr-1 inline h-3 w-3" />
-                      Best net realization
-                    </span>
+                      <Award className="mr-1 inline h-3 w-3" />{t("Best net realization")}</span>
                   )}
                 </div>
               </div>
@@ -204,7 +201,7 @@ export default function OfferComparison({ lot, offers = [] }) {
                 <span>
                   Transport{' '}
                   {o.transportUnknown ? (
-                    <em className="text-honey-700">n/a</em>
+                    <em className="text-honey-700">{t("n/a")}</em>
                   ) : (
                     <strong className="text-ink-800">−₹{o.transport}/kg</strong>
                   )}

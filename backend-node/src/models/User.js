@@ -25,7 +25,7 @@ const { Schema } = mongoose;
 const UserSchema = new Schema(
   {
     publicId: { type: String, unique: true, index: true, required: true },
-    role: { type: String, enum: ['SELLER', 'BUYER', 'FPO'], required: true },
+    role: { type: String, enum: ['SELLER', 'BUYER', 'FPO', 'SERVICE_PROVIDER'], required: true },
     // Phase 4 — buyer id is the Buyer's Mongo ObjectId (24-char hex)
     // or BUY-... publicId. Was historically typed as Number, which
     // caused Mongoose to throw on `Number("6a9410a7...")` -> NaN
@@ -33,6 +33,7 @@ const UserSchema = new Schema(
     // shape and never coerced on save.
     activeBuyerId: { type: String, default: null },
     activeFpoId: { type: String, default: null },
+    activeServiceProviderId: { type: String, default: null },
     displayName: { type: String, default: '' },
     // Full name shown to other users. Distinct from displayName
     // (which is a friendly handle) so existing flows are unaffected.
@@ -55,6 +56,12 @@ const UserSchema = new Schema(
     // the UI already surfaces as its own badge.
     identityVerified: { type: Boolean, default: false },
     identityVerifiedAt: { type: Date, default: null },
+    verificationStatus: {
+      type: String,
+      enum: ['NOT_VERIFIED', 'PENDING', 'VERIFIED'],
+      default: 'NOT_VERIFIED',
+    },
+    verificationDetails: { type: Schema.Types.Mixed, default: null },
   },
   { timestamps: true }
 );
@@ -78,16 +85,25 @@ UserSchema.methods.verifyPassword = async function (plain) {
 };
 
 UserSchema.methods.toRead = function () {
+  let status = this.verificationStatus;
+  if (!status) {
+    status = this.identityVerified ? 'VERIFIED' : 'NOT_VERIFIED';
+  }
   return {
     public_id: this.publicId,
     role: this.role,
     active_buyer_id: this.activeBuyerId,
     active_fpo_id: this.activeFpoId,
+    active_service_provider_id: this.activeServiceProviderId,
     display_name: this.displayName,
     name: this.name || this.displayName || '',
     email: this.email || null,
     phone: this.phone || null,
     is_demo: !!this.isDemo,
+    identity_verified: !!this.identityVerified,
+    identity_verified_at: this.identityVerifiedAt || null,
+    verification_status: status,
+    verification_details: this.verificationDetails || null,
     created_at: this.createdAt,
     updated_at: this.updatedAt,
   };

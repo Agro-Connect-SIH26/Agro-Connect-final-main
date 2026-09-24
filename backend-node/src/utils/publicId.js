@@ -38,6 +38,8 @@ const IssueId = () => `ISS-${hex(12)}`;
 // prefix is descriptive so log lines and API responses can tell
 // verifications apart from deals and offers at a glance.
 const VerificationId = () => `DV-${hex(12)}`;
+const SPId = () => `SP-${hex(8)}`;
+const SRId = () => `SR-${hex(12)}`;
 
 module.exports = {
   CropLotId,
@@ -49,4 +51,6 @@ module.exports = {
   DemandId,
   IssueId,
   VerificationId,
+  SPId,
+  SRId,
 };

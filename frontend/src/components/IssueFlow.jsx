@@ -16,6 +16,7 @@
 import { useEffect, useState } from 'react'
 import api from '../api/axios.js'
 import { AlertTriangle, Check, MessageSquare, ChevronRight } from 'lucide-react'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 const TYPES = [
   { value: 'QUALITY', label: 'Quality' },
@@ -60,6 +61,8 @@ function fmtDate(iso) {
 }
 
 export default function IssueFlow({ dealPublicId, currentUser }) {
+  const { t } = useLanguage()
+
   const [list, setList] = useState([])
   const [status, setStatus] = useState('loading')
   const [err, setErr] = useState(null)
@@ -155,13 +158,13 @@ export default function IssueFlow({ dealPublicId, currentUser }) {
 
   if (status === 'loading') {
     return (
-      <div className="ac-card p-4 text-sm text-ink-500">Loading issues…</div>
+      <div className="ac-card p-4 text-sm text-ink-500">{t("Loading issues…")}</div>
     )
   }
   if (status === 'error' && list.length === 0) {
     return (
       <div className="ac-card border-rust-200 bg-rust-50 p-4 text-sm text-rust-800">
-        {err || 'Could not load issues.'}
+        {err || t('Could not load issues.')}
       </div>
     )
   }
@@ -170,16 +173,13 @@ export default function IssueFlow({ dealPublicId, currentUser }) {
     <section className="ac-card p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <h2 className="font-display text-base text-ink-900">
-            Issues & disputes
-          </h2>
+          <h2 className="font-display text-base text-ink-900">{t("Issues & disputes")}</h2>
           <p className="mt-1 text-xs text-ink-500">
-            Raise a concern about quality, weight, payment, or delivery.
-            Issues move OPEN → UNDER_REVIEW → RESOLVED.
+            {t("Raise a concern about quality, weight, payment, or delivery. Issues move OPEN → UNDER_REVIEW → RESOLVED.")}
           </p>
         </div>
         <span className="ac-chip ac-chip-ink">
-          {list.length} issue{list.length === 1 ? '' : 's'}
+          {list.length} {list.length === 1 ? t("issue") : t("issues")}
         </span>
       </div>
 
@@ -192,25 +192,21 @@ export default function IssueFlow({ dealPublicId, currentUser }) {
       {/* Raise form */}
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         <div>
-          <label className="mb-1 block text-xs font-medium text-ink-700">
-            Type
-          </label>
+          <label className="mb-1 block text-xs font-medium text-ink-700">{t("Type")}</label>
           <select
             value={type}
             onChange={(e) => setType(e.target.value)}
             className={INPUT}
           >
-            {TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
+            {TYPES.map((typeOpt) => (
+              <option key={typeOpt.value} value={typeOpt.value}>
+                {t(typeOpt.label)}
               </option>
             ))}
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-ink-700">
-            Raised by
-          </label>
+          <label className="mb-1 block text-xs font-medium text-ink-700">{t("Raised by")}</label>
           <select
             value={raisedByRole}
             onChange={(e) => setRaisedByRole(e.target.value)}
@@ -218,32 +214,28 @@ export default function IssueFlow({ dealPublicId, currentUser }) {
           >
             {ROLE_OPTIONS.map((r) => (
               <option key={r.value} value={r.value}>
-                {r.label}
+                {t(r.label)}
               </option>
             ))}
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-ink-700">
-            Evidence URLs
-          </label>
+          <label className="mb-1 block text-xs font-medium text-ink-700">{t("Evidence URLs")}</label>
           <input
             type="text"
             value={evidenceRaw}
             onChange={(e) => setEvidenceRaw(e.target.value)}
             className={INPUT}
-            placeholder="one per line or comma-separated"
+            placeholder={t("one per line or comma-separated")}
           />
         </div>
         <div className="sm:col-span-3">
-          <label className="mb-1 block text-xs font-medium text-ink-700">
-            Description
-          </label>
+          <label className="mb-1 block text-xs font-medium text-ink-700">{t("Description")}</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className={INPUT + ' h-20 resize-y'}
-            placeholder="What went wrong?"
+            placeholder={t("What went wrong?")}
           />
         </div>
         <div className="sm:col-span-3">
@@ -254,7 +246,7 @@ export default function IssueFlow({ dealPublicId, currentUser }) {
             className="ac-btn-primary disabled:cursor-not-allowed disabled:opacity-50"
           >
             <MessageSquare className="mr-1 inline h-4 w-4" />
-            {busy ? 'Raising…' : 'Raise issue'}
+            {busy ? t('Raising…') : t('Raise issue')}
           </button>
         </div>
       </div>
@@ -262,9 +254,7 @@ export default function IssueFlow({ dealPublicId, currentUser }) {
       {/* Issue list */}
       <ul className="mt-4 space-y-3">
         {list.length === 0 && (
-          <li className="rounded-card border border-ink-100 bg-earth-50 p-3 text-xs text-ink-500">
-            No issues raised yet on this deal.
-          </li>
+          <li className="rounded-card border border-ink-100 bg-earth-50 p-3 text-xs text-ink-500">{t("No issues raised yet on this deal.")}</li>
         )}
         {list.map((issue) => {
           const next = STATUS_NEXT[issue.status]
@@ -278,10 +268,10 @@ export default function IssueFlow({ dealPublicId, currentUser }) {
                 <div className="flex flex-wrap items-center gap-2">
                   <StatusPill status={issue.status} />
                   <span className="ac-chip ac-chip-ink">
-                    {issue.type}
+                    {t(issue.type)}
                   </span>
                   <span className="text-xs text-ink-500">
-                    by {issue.raised_by_role} · {fmtDate(issue.created_at)}
+                    {t("by")} {t(issue.raised_by_role)} · {fmtDate(issue.created_at)}
                   </span>
                 </div>
                 <span className="font-mono text-[10px] text-ink-400">
@@ -309,7 +299,7 @@ export default function IssueFlow({ dealPublicId, currentUser }) {
               {issue.resolution_notes && (
                 <p className="mt-2 rounded-card border border-success-200 bg-success-50 p-2 text-xs text-success-700">
                   <Check className="mr-1 inline h-3 w-3" />
-                  Resolution notes: {issue.resolution_notes}
+                  {t("Resolution notes:")} {issue.resolution_notes}
                 </p>
               )}
               {next && (
@@ -323,8 +313,8 @@ export default function IssueFlow({ dealPublicId, currentUser }) {
                         className={INPUT}
                         placeholder={
                           next.to === 'RESOLVED'
-                            ? 'resolution notes (recommended)'
-                            : 'notes (optional)'
+                            ? t('resolution notes (recommended)')
+                            : t('notes (optional)')
                         }
                       />
                       <input
@@ -332,7 +322,7 @@ export default function IssueFlow({ dealPublicId, currentUser }) {
                         value={assignedTo}
                         onChange={(e) => setAssignedTo(e.target.value)}
                         className={INPUT}
-                        placeholder="assign to (optional)"
+                        placeholder={t("assign to (optional)")}
                       />
                       <div className="sm:col-span-2 flex gap-2">
                         <button
@@ -341,7 +331,7 @@ export default function IssueFlow({ dealPublicId, currentUser }) {
                           disabled={busy}
                           className="ac-btn-primary disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          {busy ? 'Working…' : `Confirm: ${next.label}`}
+                          {busy ? t('Working…') : `${t("Confirm")}: ${t(next.label)}`}
                         </button>
                         <button
                           type="button"
@@ -351,9 +341,7 @@ export default function IssueFlow({ dealPublicId, currentUser }) {
                             setAssignedTo('')
                           }}
                           className="ac-btn-ghost"
-                        >
-                          Cancel
-                        </button>
+                        >{t("Cancel")}</button>
                       </div>
                     </div>
                   ) : (
@@ -363,14 +351,14 @@ export default function IssueFlow({ dealPublicId, currentUser }) {
                       className="ac-btn-ghost"
                     >
                       <ChevronRight className="mr-1 inline h-3 w-3" />
-                      {next.label}
+                      {t(next.label)}
                     </button>
                   )}
                 </div>
               )}
               {!next && issue.resolved_at && (
                 <p className="mt-2 text-xs text-ink-500">
-                  Resolved {fmtDate(issue.resolved_at)}
+                  {t("Resolved")} {fmtDate(issue.resolved_at)}
                 </p>
               )}
             </li>

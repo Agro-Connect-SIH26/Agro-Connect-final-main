@@ -17,6 +17,7 @@
  * shape. The component does not call any APIs.
  */
 import { Link } from 'react-router-dom'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 const TONE_STYLES = {
   rust: 'border-rust-200 bg-rust-50 text-rust-800',
@@ -25,6 +26,8 @@ const TONE_STYLES = {
 }
 
 export default function AttentionStrip({ items }) {
+  const { t } = useLanguage()
+
   if (!Array.isArray(items) || items.length === 0) return null
   // Drop zero-count items, then sort by count desc
   const visible = items
@@ -34,13 +37,11 @@ export default function AttentionStrip({ items }) {
 
   return (
     <section
-      aria-label="Needs your attention"
+      aria-label={t("Needs your attention")}
       className="mb-6 rounded-card border border-ink-200 bg-white p-3"
     >
       <div className="flex flex-wrap items-center gap-2 text-xs text-ink-500">
-        <span className="font-semibold uppercase tracking-wide text-ink-600">
-          Needs attention
-        </span>
+        <span className="font-semibold uppercase tracking-wide text-ink-600">{t("Needs attention")}</span>
         <span className="hidden h-3 w-px bg-ink-200 sm:inline-block" />
         {visible.map((it) => {
           const tone = TONE_STYLES[it.tone] || TONE_STYLES.primary

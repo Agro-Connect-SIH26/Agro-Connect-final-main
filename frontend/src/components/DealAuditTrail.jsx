@@ -17,6 +17,7 @@
  */
 import { useEffect, useState } from 'react'
 import api from '../api/axios.js'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 import {
   Check,
   AlertTriangle,
@@ -138,6 +139,8 @@ function DetailsList({ details }) {
 }
 
 export default function DealAuditTrail({ dealPublicId }) {
+  const { t } = useLanguage()
+
   const [data, setData] = useState(null)
   const [status, setStatus] = useState('loading')
   const [err, setErr] = useState(null)
@@ -185,23 +188,18 @@ export default function DealAuditTrail({ dealPublicId }) {
     <section className="ac-card p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <h2 className="font-display text-base text-ink-900">
-            Deal audit trail
-          </h2>
+          <h2 className="font-display text-base text-ink-900">{t("Deal audit trail")}</h2>
           <p className="mt-1 text-xs text-ink-500">
-            Every recorded event on this deal, in order. Append-only;
-            nothing is rewritten after the fact.
+            {t("Every recorded event on this deal, in order. Append-only; nothing is rewritten after the fact.")}
           </p>
         </div>
         <span className="ac-chip ac-chip-ink">
-          {events.length} event{events.length === 1 ? '' : 's'}
+          {events.length} {t("events")}
         </span>
       </div>
 
       {events.length === 0 ? (
-        <p className="mt-4 text-sm text-ink-500">
-          No events recorded yet. The first state change will appear here.
-        </p>
+        <p className="mt-4 text-sm text-ink-500">{t("No events recorded yet. The first state change will appear here.")}</p>
       ) : (
         <ol className="mt-4 space-y-3">
           {events.map((e, i) => {
@@ -222,7 +220,7 @@ export default function DealAuditTrail({ dealPublicId }) {
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className={`text-sm font-semibold ${meta.tone}`}>
-                        {meta.label}
+                        {t(meta.label)}
                       </span>
                       {describeTransition(e)}
                     </div>
@@ -262,8 +260,7 @@ export default function DealAuditTrail({ dealPublicId }) {
       )}
 
       <p className="mt-3 text-[11px] italic text-ink-500">
-        Transaction references are deterministic internal IDs, not bank
-        receipts.
+        {t("Transaction references are deterministic internal IDs, not bank receipts.")}
       </p>
     </section>
   )

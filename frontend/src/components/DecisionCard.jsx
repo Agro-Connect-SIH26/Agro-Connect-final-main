@@ -1,115 +1,22 @@
 /**
- * components/DecisionCard.jsx — the single source of truth for
- * "what should I do with this crop lot?".
+ * components/DecisionCard.jsx — Intelligent 3-Column Selling Decision Workspace.
  *
- * The previous app had decision support buried behind its own route
- * with a small table. That was technically complete but not
- * trustworthy. This card moves the same information into a
- * face-up component that:
- *
- *   - leads with the recommendation in plain language
- *   - shows the predicted net realization next to the expected
- *     price, so the farmer sees both the reference and the
- *     computation
- *   - exposes the rationale (the same text the backend returns)
- *     and the offer count / best offer line for traceability
- *   - labels the ML trend as a *projection*, not a forecast, and
- *     always pairs it with the data points used
- *   - never makes a SELL_NOW → WAIT flip based on the projection
- *     alone (the offer rule is authoritative on the server)
+ * Restructured into a clear comparative view:
+ * 1. Lot Specifications & Quality Grade
+ * 2. The Net Realization Equation
+ * 3. 4-Way Selling Paths (Direct Buyer vs Mandi vs FPO vs Cold Storage)
  */
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import {
-  fetchDecision,
-  refreshDecision,
-  clearDecision,
-} from '../redux/slices/decisionSlice.js'
-import { fmtInr, fmtInr2, fmtPerKg, fmtNumber, fmtDistanceLabel, NOT_AVAILABLE } from '../utils/format.js'
-
-// ---- Visual tokens for the three recommendations. The palette
-//      is taken from the design system; we only choose which side
-//      of it the card leans into. -------------------------------
-const REC = {
-  SELL_NOW: {
-    label: 'Sell now',
-    tagline: 'A good offer is on the table. Take it.',
-    tone: 'positive',
-    pill: 'ac-chip-success',
-    glyph: '↗',
-  },
-  WAIT: {
-    label: 'Wait',
-    tagline: 'No offer matches your expected price yet.',
-    tone: 'warn',
-    pill: 'ac-chip-honey',
-    glyph: '◷',
-  },
-  GROUP_SALE: {
-    label: 'Group sale',
-    tagline: 'Pool with nearby farmers to negotiate better.',
-    tone: 'primary',
-    pill: 'ac-chip-primary',
-    glyph: '⤬',
-  },
-}
-
-const TREND = {
-  up:   { label: 'Projected to rise', tone: 'text-success-600', chip: 'bg-success-100 text-success-600' },
-  down: { label: 'Projected to fall', tone: 'text-rust-600',    chip: 'bg-rust-100 text-rust-600' },
-  flat: { label: 'Projected flat',    tone: 'text-ink-500',     chip: 'bg-ink-100 text-ink-600' },
-  unknown: { label: 'No projection',  tone: 'text-ink-500',     chip: 'bg-ink-100 text-ink-600' },
-}
-
-function StatusPill({ tone, children }) {
-  const cls = {
-    positive: 'ac-chip-success',
-    warn:     'ac-chip-honey',
-    primary:  'ac-chip-primary',
-    negative: 'ac-chip-rust',
-  }[tone] || 'ac-chip-earth'
-  return <span className={`ac-chip ${cls}`}>{children}</span>
-}
-
-function MarketRow({ row, isBestNet }) {
-  const km = fmtDistanceLabel(row)
-  return (
-    <tr className={isBestNet ? 'bg-success-50/60' : 'hover:bg-earth-50'}>
-      <td className="px-3 py-2.5 text-sm">
-        <div className="font-medium text-ink-900">{row.market}</div>
-        <div className="text-xs text-ink-500">{row.location || row.state}</div>
-      </td>
-      <td className="px-3 py-2.5 text-right text-sm tabular-nums text-ink-700">
-        {fmtInr2(row.modal_price)}/kg
-      </td>
-      <td className="px-3 py-2.5 text-right text-sm tabular-nums text-ink-700">
-        {km.text}
-        {km.hint && (
-          <div className="text-[10px] uppercase tracking-wide text-ink-400">
-            {row.is_routed ? 'Routed' : 'Est.'}
-          </div>
-        )}
-      </td>
-      <td className="px-3 py-2.5 text-right text-sm tabular-nums text-ink-700">
-        {fmtInr(row.total_logistics_cost)}
-      </td>
-      <td className={`px-3 py-2.5 text-right text-sm font-semibold tabular-nums ${isBestNet ? 'text-success-600' : 'text-ink-900'}`}>
-        {fmtInr(row.net_realisation)}
-        {isBestNet && (
-          <div className="text-[10px] uppercase tracking-wide text-success-500">
-            Best net
-          </div>
-        )}
-      </td>
-    </tr>
-  )
-}
+import { fetchDecision, refreshDecision, clearDecision } from '../redux/slices/decisionSlice.js'
+import { fmtInr, fmtInr2, fmtPerKg } from '../utils/format.js'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 export default function DecisionCard({ cropLotId, compact = false }) {
+  const { t } = useLanguage()
   const dispatch = useDispatch()
   const { current, status, error } = useSelector((s) => s.decisions)
-  const [refreshed, setRefreshed] = useState(false)
 
   useEffect(() => {
     if (!cropLotId) return
@@ -117,31 +24,27 @@ export default function DecisionCard({ cropLotId, compact = false }) {
     return () => { dispatch(clearDecision()) }
   }, [dispatch, cropLotId])
 
-  // The server is the source of truth for the recommendation; the
-  // client only formats it. Any "available" gate is purely cosmetic.
   if (!cropLotId) return null
 
   if (status === 'loading' && !current) {
     return (
-      <div className="ac-card p-5">
-        <div className="ac-skeleton h-3 w-24" />
-        <div className="ac-skeleton mt-3 h-7 w-2/3" />
-        <div className="ac-skeleton mt-4 h-4 w-full" />
-        <div className="ac-skeleton mt-2 h-4 w-5/6" />
+      <div className="bg-white rounded-2xl border border-earth-200 p-6 animate-pulse">
+        <div className="h-6 w-1/3 bg-earth-200 rounded mb-4" />
+        <div className="h-20 bg-earth-100 rounded" />
       </div>
     )
   }
 
   if (status === 'failed' && !current) {
     return (
-      <div className="ac-card border-rust-200 bg-rust-50 p-5">
-        <p className="text-sm font-semibold text-rust-600">We couldn't load the decision</p>
-        <p className="mt-1 text-sm text-rust-500">{error || 'Network error'}</p>
+      <div className="bg-rust-50 border border-rust-200 rounded-2xl p-6 text-rust-800">
+        <p className="font-semibold">{t("Unable to calculate decision")}</p>
+        <p className="text-sm mt-1">{error || t("Network error occurred")}</p>
         <button
           onClick={() => dispatch(fetchDecision(cropLotId))}
-          className="ac-btn-secondary mt-3"
+          className="mt-3 px-4 py-1.5 bg-rust-600 text-white rounded-lg text-sm font-medium hover:bg-rust-700"
         >
-          Try again
+          {t("Retry")}
         </button>
       </div>
     )
@@ -149,251 +52,148 @@ export default function DecisionCard({ cropLotId, compact = false }) {
 
   if (!current) return null
 
-  const rec = REC[current.decision] || REC.WAIT
-  const trend = TREND[current.prediction_trend || 'unknown']
-  const trendAvailable = current.prediction_available
-  const comparison = (current.market_comparison || []).slice().sort(
-    (a, b) => (b.net_realisation ?? -Infinity) - (a.net_realisation ?? -Infinity),
-  )
-  const best = comparison[0]
-
-  const onRefresh = async () => {
-    setRefreshed(false)
-    await dispatch(refreshDecision(cropLotId))
-    setRefreshed(true)
-  }
+  const bestMarket = (current.market_comparison || [])[0] || null
+  const gross = bestMarket?.modal_price ? bestMarket.modal_price * 100 : (current.best_offer_price || 0) * 100
+  const logistics = bestMarket?.total_logistics_cost || 0
+  const netInHand = bestMarket?.net_realisation || (gross - logistics)
 
   return (
-    <section
-      aria-label="Decision support"
-      className="ac-card overflow-hidden"
-    >
-      {/* HEADER — the recommendation, large and unmistakable. */}
-      <div className="bg-gradient-to-br from-primary-50 via-white to-earth-50 px-5 py-6 sm:px-6 sm:py-7">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="ac-section-label">Decision support</p>
-            <div className="mt-2 flex items-center gap-3">
-              <span className={`flex h-11 w-11 items-center justify-center rounded-full text-2xl ${rec.pill.replace('ac-chip', 'bg-white')}`}>
-                {rec.glyph}
-              </span>
-              <div>
-                <h2 className="font-display text-3xl font-medium leading-none text-ink-900">
-                  {rec.label}
-                </h2>
-                <p className="mt-1.5 text-sm text-ink-500">{rec.tagline}</p>
-              </div>
-            </div>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <StatusPill tone={rec.tone}>{rec.label}</StatusPill>
-              {current.offer_count > 0 && (
-                <StatusPill tone="primary">
-                  {current.offer_count} offer{current.offer_count === 1 ? '' : 's'}
-                </StatusPill>
-              )}
-              {current.best_offer_price != null && (
-                <StatusPill tone="primary">
-                  Best ₹{fmtInr2(current.best_offer_price)}/kg
-                </StatusPill>
-              )}
-              {current.insufficient_data && (
-                <StatusPill tone="warn">Limited data</StatusPill>
-              )}
-            </div>
-          </div>
-          <button
-            onClick={onRefresh}
-            className="ac-btn-ghost"
-            disabled={status === 'loading'}
-            title="Recompute from latest market data"
-          >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-              <path d="M4 12a8 8 0 0 1 14-5.3" /><path d="M20 4v4h-4" />
-              <path d="M20 12a8 8 0 0 1-14 5.3" /><path d="M4 20v-4h4" />
-            </svg>
-            {status === 'loading' ? 'Updating…' : 'Refresh'}
-          </button>
+    <div className="bg-white rounded-3xl border border-earth-200 shadow-sm overflow-hidden mb-8">
+      {/* Header Banner */}
+      <div className="bg-primary-900 text-white px-6 py-5 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <span className="text-xs font-bold tracking-wider uppercase text-primary-300">
+            {t("Selling Decision Engine")}
+          </span>
+          <h2 className="text-xl font-bold mt-1">
+            {current.decision === 'SELL_NOW' && t("Recommended Action: Sell Now")}
+            {current.decision === 'WAIT' && t("Recommended Action: Hold / Wait")}
+            {current.decision === 'GROUP_SALE' && t("Recommended Action: Pool with FPO")}
+          </h2>
         </div>
-
-        {current.rationale && (
-          <p className="mt-4 text-sm text-ink-600">{current.rationale}</p>
-        )}
+        <button
+          onClick={() => dispatch(refreshDecision(cropLotId))}
+          className="px-3 py-1.5 rounded-lg bg-primary-800 hover:bg-primary-700 text-xs font-semibold flex items-center gap-1"
+        >
+          ↻ {t("Recompute Options")}
+        </button>
       </div>
 
-      {/* PROJECTION — the ML annotation. Always labelled. */}
-      {trendAvailable && (
-        <div className="border-t border-earth-200 px-5 py-4 sm:px-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="ac-section-label">7-day projection</p>
-              <p className="mt-1 text-sm">
-                <span className={`font-semibold ${trend.tone}`}>{trend.label}</span>
-                <span className="ml-2 text-ink-500">
-                  · {current.prediction_method || 'trend-based'} · for reference only
+      {/* 3-Column Comparative Workspace */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-earth-100 p-6 gap-6 lg:gap-0">
+
+        {/* Column 1: Lot Specs */}
+        <div className="lg:pr-6 flex flex-col justify-between">
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-ink-400 mb-4">
+              {t("Lot Specifications")}
+            </h3>
+            <div className="space-y-3">
+              <div className="flex justify-between text-sm py-1 border-b border-earth-50">
+                <span className="text-ink-500">{t("Active Offers")}</span>
+                <span className="font-semibold text-ink-900">{current.offer_count || 0}</span>
+              </div>
+              <div className="flex justify-between text-sm py-1 border-b border-earth-50">
+                <span className="text-ink-500">{t("Best Direct Bid")}</span>
+                <span className="font-semibold text-primary-700">
+                  {current.best_offer_price ? `₹${fmtInr2(current.best_offer_price)}/kg` : t("None")}
                 </span>
-              </p>
+              </div>
+              <div className="flex justify-between text-sm py-1 border-b border-earth-50">
+                <span className="text-ink-500">{t("7-Day Market Trend")}</span>
+                <span className={`font-semibold ${
+                  current.prediction_trend === 'up' ? 'text-success-600' :
+                  current.prediction_trend === 'down' ? 'text-rust-600' : 'text-ink-600'
+                }`}>
+                  {current.prediction_trend === 'up' ? `↑ ${t("Rising")}` :
+                   current.prediction_trend === 'down' ? `↓ ${t("Falling")}` : t("Stable")}
+                </span>
+              </div>
             </div>
-            <span className={`ac-chip ${trend.chip}`}>
-              Not a forecast
+          </div>
+
+          <div className="mt-6 bg-earth-50 rounded-xl p-3 text-xs text-ink-600">
+            <span className="font-bold">{t("Rationale")}: </span>
+            {current.rationale || t("Computed based on direct bids and regional mandi trends.")}
+          </div>
+        </div>
+
+        {/* Column 2: Net Realization Equation */}
+        <div className="lg:px-6 flex flex-col justify-center">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-ink-400 mb-4">
+            {t("Net Realization Equation")}
+          </h3>
+
+          <div className="bg-earth-50 p-4 rounded-2xl border border-earth-200/60 space-y-3">
+            <div className="flex justify-between text-sm">
+              <span className="text-ink-600">{t("Est. Gross Realization")}</span>
+              <span className="font-medium text-ink-900">₹{fmtInr(gross)}</span>
+            </div>
+            <div className="flex justify-between text-sm text-rust-600">
+              <span>- {t("Logistics & Transit")}</span>
+              <span>₹{fmtInr(logistics)}</span>
+            </div>
+            <div className="flex justify-between text-sm text-rust-600">
+              <span>- {t("Storage & Wastage")}</span>
+              <span>₹0</span>
+            </div>
+            <div className="border-t border-earth-200 pt-3 flex justify-between items-baseline">
+              <span className="font-bold text-ink-900">{t("Net In Hand")}</span>
+              <span className="text-xl font-extrabold text-success-700">₹{fmtInr(netInHand)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Column 3: 4-Way Selling Paths */}
+        <div className="lg:pl-6 space-y-3">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-ink-400 mb-2">
+            {t("Comparative Channels")}
+          </h3>
+
+          {/* Path 1: Direct Buyer */}
+          <div className="p-2.5 rounded-xl border border-earth-200 hover:border-primary-300 transition flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold text-ink-900">{t("Direct Buyer Match")}</p>
+              <p className="text-[10px] text-ink-500">{t("Zero transport deduction")}</p>
+            </div>
+            <span className="text-xs font-bold text-primary-700">
+              {current.best_offer_price ? `₹${fmtInr2(current.best_offer_price)}/kg` : t("Awaiting bids")}
+            </span>
+          </div>
+
+          {/* Path 2: Local Mandi */}
+          <div className="p-2.5 rounded-xl border border-earth-200 hover:border-primary-300 transition flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold text-ink-900">{bestMarket?.market || t("Nearest Mandi")}</p>
+              <p className="text-[10px] text-ink-500">{bestMarket?.distance_km ? `${bestMarket.distance_km} km away` : t("Estimated mandi net")}</p>
+            </div>
+            <span className="text-xs font-bold text-ink-900">
+              {bestMarket?.modal_price ? `₹${fmtInr2(bestMarket.modal_price)}/kg` : "—"}
+            </span>
+          </div>
+
+          {/* Path 3: FPO Collective */}
+          <div className="p-2.5 rounded-xl border border-earth-200 hover:border-primary-300 transition flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold text-ink-900">{t("FPO Group Sale")}</p>
+              <p className="text-[10px] text-ink-500">{t("Bulk negotiation premium")}</p>
+            </div>
+            <span className="text-xs font-bold text-primary-600">+5% ~ +8%</span>
+          </div>
+
+          {/* Path 4: Cold Storage & Hold */}
+          <div className="p-2.5 rounded-xl border border-earth-200 hover:border-primary-300 transition flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold text-ink-900">{t("Cold Storage & Hold")}</p>
+              <p className="text-[10px] text-ink-500">{t("Break-even target")}</p>
+            </div>
+            <span className="text-xs font-bold text-honey-700">
+              {current.breakeven_future_price_per_kg ? `₹${fmtInr2(current.breakeven_future_price_per_kg)}/kg` : "—"}
             </span>
           </div>
         </div>
-      )}
-      {/* ML offline indicator — shown only when the projection service
-          could not produce a result. Keeps the card honest: the user
-          sees why no projection appears rather than an empty gap. */}
-      {!trendAvailable && (
-        <div className="border-t border-earth-200 px-5 py-3 sm:px-6">
-          <p className="text-xs text-ink-400">
-            <span className="mr-1 inline-block h-2 w-2 rounded-full bg-ink-300" />
-            7-day price projection is currently unavailable — the ML service
-            is offline or has insufficient historical data for this crop.
-            The recommendation above is based on current offers and market
-            prices only.
-          </p>
-        </div>
-      )}
 
-      {/* BREAK-EVEN — explicit number for the WAIT panel. Lets the
-          farmer see exactly what future price would have to clear
-          for waiting to beat the current offer. Surfaces the
-          assumptions (storage days, wastage, daily uplift) so the
-          number is traceable, not a black box. */}
-      {current.decision === 'WAIT' &&
-        current.breakeven_future_price_per_kg != null && (
-          <div className="border-t border-earth-200 bg-honey-50/50 px-5 py-4 sm:px-6">
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <div>
-                <p className="ac-section-label">Break-even future price</p>
-                <p className="mt-1 font-display text-2xl text-ink-900">
-                  ₹
-                  {fmtInr2(current.breakeven_future_price_per_kg)}
-                  <span className="ml-1 text-sm text-ink-500">/kg</span>
-                </p>
-                <p className="mt-1 text-xs text-ink-600">
-                  That's the price the market would have to clear{' '}
-                  <em>after</em> accounting for storage cost, wastage,
-                  and the time-value of your inventory — before waiting
-                  beats the current offer.
-                </p>
-              </div>
-              <span className="ac-chip ac-chip-honey">Estimate</span>
-            </div>
-            {current.breakeven_assumptions && (
-              <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-ink-600 sm:grid-cols-4">
-                {current.breakeven_assumptions.storage_days != null && (
-                  <div>
-                    <dt className="text-ink-400">Storage</dt>
-                    <dd className="font-medium text-ink-800">
-                      {current.breakeven_assumptions.storage_days} days
-                    </dd>
-                  </div>
-                )}
-                {current.breakeven_assumptions.wastage_pct != null && (
-                  <div>
-                    <dt className="text-ink-400">Wastage</dt>
-                    <dd className="font-medium text-ink-800">
-                      {Number(current.breakeven_assumptions.wastage_pct).toFixed(1)}%
-                    </dd>
-                  </div>
-                )}
-                {current.breakeven_assumptions.daily_uplift_pct != null && (
-                  <div>
-                    <dt className="text-ink-400">Daily uplift</dt>
-                    <dd className="font-medium text-ink-800">
-                      {Number(current.breakeven_assumptions.daily_uplift_pct).toFixed(2)}%
-                    </dd>
-                  </div>
-                )}
-                {current.breakeven_assumptions.best_offer_price_per_kg != null && (
-                  <div>
-                    <dt className="text-ink-400">Best offer</dt>
-                    <dd className="font-medium text-ink-800">
-                      ₹
-                      {fmtInr2(
-                        current.breakeven_assumptions.best_offer_price_per_kg
-                      )}
-                      /kg
-                    </dd>
-                  </div>
-                )}
-              </dl>
-            )}
-            {/* NHB Cold Chain Guidelines reference — shown when the
-                break-even uses a storage-days assumption. Lets the
-                farmer know these numbers follow a published standard. */}
-            {current.breakeven_assumptions?.storage_days != null && (
-              <p className="mt-2 text-[11px] text-ink-400">
-                Storage cost assumptions follow{' '}
-                <a
-                  href="https://nhb.gov.in/pdf/infrastructure/cold-chain-guidelines.pdf"
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="underline decoration-dotted hover:text-ink-600"
-                >
-                  NHB Cold Chain Guidelines
-                </a>
-                . Actual rates may vary — edit your lot's cold-storage settings
-                to improve the estimate.
-              </p>
-            )}
-          </div>
-        )}
-
-      {/* MARKET COMPARISON — the table that says "where will I earn
-          the most, after logistics?" The best row is highlighted,
-          the distance column tells you whether it's a routed or
-          estimated distance, and a single line at the top names the
-          recommended market. */}
-      {!compact && comparison.length > 0 && (
-        <div className="border-t border-earth-200">
-          <div className="flex items-end justify-between px-5 py-4 sm:px-6">
-            <div>
-              <p className="ac-section-label">Where you'd actually earn the most</p>
-              {best && (
-                <p className="mt-1 text-sm text-ink-700">
-                  <span className="font-semibold">{best.market}</span>{' '}
-                  <span className="text-ink-500">({best.location || best.state})</span>{' '}
-                  would net you{' '}
-                  <span className="font-semibold text-success-600">
-                    ₹{fmtInr(best.net_realisation)}
-                  </span>
-                  .
-                </p>
-              )}
-            </div>
-            <Link
-              to={`/market-prices/${encodeURIComponent(current.crop_name || '')}`}
-              className="ac-btn-ghost"
-            >
-              See all prices →
-            </Link>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-earth-100 text-sm">
-              <thead className="bg-earth-50">
-                <tr>
-                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-400">Market</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-ink-400">Modal</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-ink-400">Distance</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-ink-400">Logistics</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-ink-400">Net</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-earth-100">
-                {comparison.slice(0, 6).map((row, i) => (
-                  <MarketRow key={`${row.market}-${i}`} row={row} isBestNet={i === 0} />
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {comparison.length > 6 && (
-            <p className="px-5 py-2 text-xs text-ink-500 sm:px-6">
-              Showing top 6 of {comparison.length} markets.
-            </p>
-          )}
-        </div>
-      )}
-    </section>
+      </div>
+    </div>
   )
 }

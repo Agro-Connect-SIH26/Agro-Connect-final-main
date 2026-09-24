@@ -20,6 +20,7 @@
 import { useEffect, useState } from 'react'
 import api from '../api/axios.js'
 import { Handshake, Check, X } from 'lucide-react'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 function fmtDate(iso) {
   if (!iso) return '—'
@@ -46,6 +47,7 @@ export default function GroupSaleOptIn({
   myMemberLotPublicIds = [],
   fpoDetail = null,
 }) {
+  const { t } = useLanguage()
   const [detail, setDetail] = useState(fpoDetail)
   const [status, setStatus] = useState(fpoDetail ? 'ready' : 'loading')
   const [err, setErr] = useState(null)
@@ -109,21 +111,21 @@ export default function GroupSaleOptIn({
   if (status === 'loading') {
     return (
       <div className="rounded-card border border-ink-100 bg-white p-3 text-xs text-ink-500">
-        Loading member opt-in state…
+        {t("Loading member opt-in state…")}
       </div>
     )
   }
   if (status === 'error') {
     return (
       <div className="rounded-card border border-rust-200 bg-rust-50 p-3 text-xs text-rust-800">
-        {err || 'Could not load opt-in state.'}
+        {err || t("Could not load opt-in state.")}
       </div>
     )
   }
   if (!myMemberLotPublicIds.length) {
     return (
       <div className="rounded-card border border-ink-100 bg-earth-50 p-3 text-xs text-ink-500">
-        No member crop lots to manage.
+        {t("No member crop lots to manage.")}
       </div>
     )
   }
@@ -158,10 +160,10 @@ export default function GroupSaleOptIn({
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="text-sm font-medium text-primary-900">
           <Handshake className="mr-1 inline h-4 w-4" />
-          Group-sale opt-in
+          {t("Group-sale opt-in")}
         </p>
         <span className="text-[11px] text-primary-700">
-          Opted-in lots are aggregated for bulk-demand matching.
+          {t("Opted-in lots are aggregated for bulk-demand matching.")}
         </span>
       </div>
       {err && (
@@ -183,13 +185,12 @@ export default function GroupSaleOptIn({
                 </p>
                 {m.opted_in ? (
                   <p className="text-[11px] text-success-700">
-                    Opted in
+                    {t("Opted in")}
                     {m.opted_in_at ? ` · ${fmtDate(m.opted_in_at)}` : ''}
                   </p>
                 ) : (
                   <p className="text-[11px] text-ink-500">
-                    Not opted in — counted in membership but not in the
-                    group-sale pool.
+                    {t("Not opted in — counted in membership but not in the group-sale pool.")}
                   </p>
                 )}
               </div>
@@ -202,7 +203,7 @@ export default function GroupSaleOptIn({
                     className="ac-btn-ghost disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <X className="mr-1 inline h-3 w-3" />
-                    {isBusy ? 'Saving…' : 'Opt out'}
+                    {isBusy ? t('Saving…') : t('Opt out')}
                   </button>
                 ) : (
                   <button
@@ -212,7 +213,7 @@ export default function GroupSaleOptIn({
                     className="ac-btn-primary disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Check className="mr-1 inline h-3 w-3" />
-                    {isBusy ? 'Saving…' : 'Opt in'}
+                    {isBusy ? t('Saving…') : t('Opt in')}
                   </button>
                 )}
               </div>

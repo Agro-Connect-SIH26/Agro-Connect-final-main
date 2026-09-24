@@ -9,13 +9,15 @@ import CropImage from '../components/CropImage.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import FarmerCard from '../components/FarmerCard.jsx'
 import usePageMeta from '../hooks/usePageMeta.js'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 function BrowseLots() {
+  const { t } = useLanguage()
   const dispatch = useDispatch()
   const navigate = useNavigate()
   usePageMeta({
-    title: 'Marketplace',
-    description: 'Browse all active crop lots and place offers on produce you want to buy.',
+    title: t('Marketplace'),
+    description: t('Browse all active crop lots and place offers on produce you want to buy.'),
   })
   const isBuyer = useSelector(selectIsBuyer)
   const activeBuyer = useSelector(selectActiveBuyer)
@@ -63,13 +65,13 @@ function BrowseLots() {
   const submitOffer = (e) => {
     e.preventDefault()
     if (!offerModal || !activeBuyer?.id) {
-      setOfferError('Select a buyer identity from the dashboard first.')
+      setOfferError(t('Select a buyer identity from the dashboard first.'))
       return
     }
     const price = Number(offerModal.price)
     const quantity = Number(offerModal.quantity)
     if (!price || !quantity) {
-      setOfferError('Price and quantity are required.')
+      setOfferError(t('Price and quantity are required.'))
       return
     }
     dispatch(createOffer({
@@ -80,7 +82,7 @@ function BrowseLots() {
       message: offerModal.message || undefined,
     })).then((action) => {
       if (action.meta.requestStatus === 'rejected') {
-        setOfferError(action.payload || 'Failed to send offer')
+        setOfferError(action.payload || t('Failed to send offer'))
       } else {
         setOfferModal(null)
       }
@@ -90,13 +92,13 @@ function BrowseLots() {
   return (
     <>
       <PageHeader
-        eyebrow="Buying"
-        title="Browse marketplace"
-        description="All ACTIVE crop lots from farmers. Pick one to make an offer."
-        back={{ to: '/buyer', label: 'Back to dashboard' }}
+        eyebrow={t("Buying")}
+        title={t("Browse marketplace")}
+        description={t("All ACTIVE crop lots from farmers. Pick one to make an offer.")}
+        back={{ to: '/buyer', label: t('Back to dashboard') }}
         actions={
           <Link to="/buyer/demands/new" className="ac-btn-secondary">
-            + New demand
+            + {t("New demand")}
           </Link>
         }
       />
@@ -104,7 +106,7 @@ function BrowseLots() {
 
         {!activeBuyer && (
           <div className="mb-4 rounded-card border border-honey-200 bg-honey-50 p-3 text-sm text-honey-800">
-            No active buyer selected. <Link to="/buyer" className="font-medium underline">Pick a buyer first</Link> to send offers.
+            {t("No active buyer selected.")} <Link to="/buyer" className="font-medium underline">{t("Pick a buyer first")}</Link> {t("to send offers.")}
           </div>
         )}
 
@@ -113,34 +115,34 @@ function BrowseLots() {
             type="text"
             value={cropFilter}
             onChange={(e) => setCropFilter(e.target.value)}
-            placeholder="Filter by crop (e.g. tomato)"
+            placeholder={t("Filter by crop (e.g. tomato)")}
             className="rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
           />
           <input
             type="text"
             value={stateFilter}
             onChange={(e) => setStateFilter(e.target.value)}
-            placeholder="Filter by state (e.g. Bihar)"
+            placeholder={t("Filter by state (e.g. Bihar)")}
             className="rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
           />
         </div>
 
         {listStatus === 'loading' && (
           <div className="ac-card p-8 text-center text-sm text-ink-500">
-            Loading available crop lots…
+            {t("Loading available crop lots…")}
           </div>
         )}
         {listStatus === 'failed' && (
           <EmptyState
             kind="error"
-            title="Could not load marketplace"
-            description={listError || 'Please retry.'}
+            title={t("Could not load marketplace")}
+            description={listError ? t(listError) : t('Please retry.')}
             action={
               <button
                 onClick={() => dispatch(fetchAvailableCropLots({}))}
                 className="ac-btn-secondary"
               >
-                Retry
+                {t("Retry")}
               </button>
             }
           />
@@ -149,8 +151,8 @@ function BrowseLots() {
         {listStatus === 'succeeded' && list.length === 0 && (
           <EmptyState
             kind="empty"
-            title="No available lots"
-            description="Try changing filters, or check back later."
+            title={t("No available lots")}
+            description={t("Try changing filters, or check back later.")}
           />
         )}
 
@@ -176,14 +178,14 @@ function BrowseLots() {
                       )}
                     </div>
                     <span className="rounded-full bg-success-50 px-2 py-0.5 text-xs font-medium text-success-700">
-                      {lot.status}
+                      {t(lot.status)}
                     </span>
                   </div>
                   <dl className="mt-3 space-y-1 text-sm text-ink-700">
-                    <div>📦 <strong>{lot.quantity} {lot.quantity_unit}</strong></div>
+                    <div>📦 <strong>{lot.quantity} {t(lot.quantity_unit)}</strong></div>
                     <div>📍 {lot.location || '—'}</div>
                     {lot.minimum_acceptable_price && (
-                      <div>Min ₹{lot.minimum_acceptable_price}/{lot.quantity_unit}</div>
+                      <div>{t("Min")} ₹{lot.minimum_acceptable_price}/{t(lot.quantity_unit)}</div>
                     )}
                   </dl>
                   <FarmerCard lotPublicId={lot.public_id} layout="row" />
@@ -192,7 +194,7 @@ function BrowseLots() {
                     disabled={!activeBuyer}
                     className="ac-btn-primary mt-4 w-full disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    Make offer
+                    {t("Make offer")}
                   </button>
                 </div>
               </article>
@@ -208,11 +210,11 @@ function BrowseLots() {
             className="w-full max-w-md rounded-card border border-ink-200 bg-white p-5 shadow-xl"
           >
             <h3 className="font-display text-lg text-ink-900">
-              Make offer on {offerModal.lot.crop_name}
+              {t("Make offer on")} {offerModal.lot.crop_name}
             </h3>
             <p className="mt-1 text-xs text-ink-500">
-              {offerModal.lot.quantity} {offerModal.lot.quantity_unit} · acting as{' '}
-              <strong>{activeBuyer?.name || 'no buyer selected'}</strong>
+              {offerModal.lot.quantity} {t(offerModal.lot.quantity_unit)} · {t("acting as")}{' '}
+              <strong>{activeBuyer?.name || t('no buyer selected')}</strong>
             </p>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               <input
@@ -221,7 +223,7 @@ function BrowseLots() {
                 required
                 value={offerModal.price}
                 onChange={(e) => setOfferModal({ ...offerModal, price: e.target.value })}
-                placeholder={`Price / ${offerModal.lot.quantity_unit}`}
+                placeholder={`${t("Price")} / ${t(offerModal.lot.quantity_unit)}`}
                 className="rounded-lg border border-ink-200 px-2 py-1.5 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
               <input
@@ -230,7 +232,7 @@ function BrowseLots() {
                 required
                 value={offerModal.quantity}
                 onChange={(e) => setOfferModal({ ...offerModal, quantity: e.target.value })}
-                placeholder="Quantity"
+                placeholder={t("Quantity")}
                 className="rounded-lg border border-ink-200 px-2 py-1.5 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </div>
@@ -238,7 +240,7 @@ function BrowseLots() {
               rows={2}
               value={offerModal.message}
               onChange={(e) => setOfferModal({ ...offerModal, message: e.target.value })}
-              placeholder="Message to farmer (optional)"
+              placeholder={t("Message to farmer (optional)")}
               className="mt-2 w-full rounded-lg border border-ink-200 px-2 py-1.5 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
             />
             {offerError && <p className="mt-2 text-sm text-rust-700">{offerError}</p>}
@@ -249,14 +251,14 @@ function BrowseLots() {
                 onClick={() => setOfferModal(null)}
                 className="ac-btn-ghost"
               >
-                Cancel
+                {t("Cancel")}
               </button>
               <button
                 type="submit"
                 disabled={actionStatus === 'loading'}
                 className="ac-btn-primary disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {actionStatus === 'loading' ? 'Sending…' : 'Send offer'}
+                {actionStatus === 'loading' ? t('Sending…') : t('Send offer')}
               </button>
             </div>
           </form>

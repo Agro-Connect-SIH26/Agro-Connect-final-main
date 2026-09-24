@@ -31,7 +31,7 @@ const { signToken } = require('../services/authService');
 
 const router = express.Router();
 
-const VALID_ROLES = ['SELLER', 'BUYER', 'FPO'];
+const VALID_ROLES = ['SELLER', 'BUYER', 'FPO', 'SERVICE_PROVIDER'];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
@@ -328,6 +328,35 @@ router.post(
     }
     await req.user.save();
     res.json({ user: req.user.toRead() });
+  })
+);
+
+router.patch(
+  '/profile',
+  asyncHandler(async (req, res) => {
+    if (!req.user) throw new AppError(401, 'login first');
+    const body = req.body || {};
+    if (body.name !== undefined) req.user.name = String(body.name).trim();
+    if (body.phone !== undefined) req.user.phone = String(body.phone).trim();
+    if (body.displayName !== undefined) req.user.displayName = String(body.displayName).trim();
+    await req.user.save();
+    res.json({ user: req.user.toRead() });
+  })
+);
+
+router.post(
+  '/verify',
+  asyncHandler(async (req, res) => {
+    if (!req.user) throw new AppError(401, 'login first');
+    const { documentType, documentNumber } = req.body || {};
+    req.user.verificationStatus = 'PENDING';
+    req.user.verificationDetails = {
+      documentType: documentType || 'DEMO_DOC',
+      documentNumber: documentNumber ? String(documentNumber).slice(-4) : 'XXXX',
+      submittedAt: new Date(),
+    };
+    await req.user.save();
+    res.json({ user: req.user.toRead(), message: 'Verification submitted' });
   })
 );
 

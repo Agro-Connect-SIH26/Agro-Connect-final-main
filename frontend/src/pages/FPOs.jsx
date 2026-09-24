@@ -40,6 +40,7 @@ import PageHeader from '../components/PageHeader.jsx'
 import usePageMeta from '../hooks/usePageMeta.js'
 import EmptyState from '../components/EmptyState.jsx'
 import GroupSaleOptIn from '../components/GroupSaleOptIn.jsx'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 // Safe number coercion. A single malformed / partial / legacy
 // aggregate row used to crash the whole FPO page via .toFixed() on
@@ -62,6 +63,7 @@ const INPUT =
   'w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500'
 
 function FeedbackStrip({ feedback, onDismiss }) {
+  const { t } = useLanguage()
   if (!feedback) return null
   const tone =
     feedback.kind === 'success'
@@ -73,12 +75,13 @@ function FeedbackStrip({ feedback, onDismiss }) {
       onClick={onDismiss}
     >
       {feedback.text}{' '}
-      <span className="ml-2 text-xs text-ink-500">(click to dismiss)</span>
+      <span className="ml-2 text-xs text-ink-500">{t('(click to dismiss)')}</span>
     </div>
   )
 }
 
 function JoinFpoCard({ fpo, onClose, onJoined }) {
+  const { t } = useLanguage()
   const dispatch = useDispatch()
   const lots = useSelector((s) => s.cropLots?.list || [])
   const lotsStatus = useSelector((s) => s.cropLots?.listStatus)
@@ -98,7 +101,7 @@ function JoinFpoCard({ fpo, onClose, onJoined }) {
 
   const submit = async () => {
     if (!selectedLot) {
-      setError('Please pick a crop lot to join with.')
+      setError(t('Please pick a crop lot to join with.'))
       return
     }
     setSubmitting(true)
@@ -114,20 +117,19 @@ function JoinFpoCard({ fpo, onClose, onJoined }) {
       onJoined && onJoined()
       onClose && onClose()
     } else {
-      setError(action.payload || 'Failed to join FPO')
+      setError(action.payload ? t(action.payload) : t('Failed to join FPO'))
     }
   }
 
   return (
     <div className="mt-3 rounded-card border border-primary-200 bg-primary-50 p-3">
       <p className="text-xs font-medium text-primary-900">
-        Pick one of your ACTIVE crop lots to join{' '}
+        {t('Pick one of your ACTIVE crop lots to join')}{' '}
         <strong>{fpo.name}</strong>:
       </p>
       {myActive.length === 0 ? (
         <p className="mt-2 text-xs text-honey-800">
-          You have no ACTIVE crop lots. Create one from the Seller dashboard
-          first.
+          {t('You have no ACTIVE crop lots. Create one from the Seller dashboard first.')}
         </p>
       ) : (
         <select
@@ -135,11 +137,11 @@ function JoinFpoCard({ fpo, onClose, onJoined }) {
           onChange={(e) => setSelectedLot(e.target.value)}
           className={INPUT + ' mt-2'}
         >
-          <option value="">— Select a crop lot —</option>
+          <option value="">— {t('Select a crop lot')} —</option>
           {myActive.map((l) => (
             <option key={l.public_id} value={l.public_id}>
               {l.crop_name} · {l.quantity}
-              {l.quantity_unit || 'kg'} · {l.location || 'no location'}
+              {l.quantity_unit || 'kg'} · {l.location || t('no location')}
             </option>
           ))}
         </select>
@@ -155,9 +157,8 @@ function JoinFpoCard({ fpo, onClose, onJoined }) {
           className="mt-0.5 h-4 w-4 rounded border-ink-300 text-primary-600 focus:ring-primary-500"
         />
         <span>
-          <strong>Opt in this lot for group sales.</strong> Opted-in
-          lots are aggregated with other farmers' lots to meet
-          bulk-buyer demand. You can change this later.
+          <strong>{t('Opt in this lot for group sales.')}</strong>{' '}
+          {t("Opted-in lots are aggregated with other farmers' lots to meet bulk-buyer demand. You can change this later.")}
         </span>
       </label>
       {error && <p className="mt-2 text-xs text-rust-700">{error}</p>}
@@ -168,14 +169,14 @@ function JoinFpoCard({ fpo, onClose, onJoined }) {
           disabled={submitting || myActive.length === 0}
           className="ac-btn-primary disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {submitting ? 'Joining…' : 'Confirm join'}
+          {submitting ? t('Joining…') : t('Confirm join')}
         </button>
         <button
           type="button"
           onClick={onClose}
           className="ac-btn-ghost"
         >
-          Cancel
+          {t('Cancel')}
         </button>
       </div>
     </div>
@@ -183,11 +184,12 @@ function JoinFpoCard({ fpo, onClose, onJoined }) {
 }
 
 function FPOs() {
+  const { t } = useLanguage()
   const dispatch = useDispatch()
   const isSeller = useSelector(selectIsSeller)
   usePageMeta({
-    title: 'FPOs',
-    description: 'Farmer Producer Organisations — join one to aggregate, share logistics, and bulk-sell.',
+    title: t('FPOs'),
+    description: t('Farmer Producer Organisations — join one to aggregate, share logistics, and bulk-sell.'),
   })
   const {
     list,
@@ -246,7 +248,7 @@ function FPOs() {
     if (action.meta.requestStatus === 'fulfilled') {
       setFeedback({
         kind: 'success',
-        text: 'Left the FPO. Your crop lot is still ACTIVE.',
+        text: t('Left the FPO. Your crop lot is still ACTIVE.'),
       })
       dispatch(fetchFpos())
       if (isSeller) dispatch(fetchMyFpos())
@@ -254,14 +256,14 @@ function FPOs() {
         dispatch(aggregateFpo({ publicId: fpoPublicId, crop: crop || undefined }))
       }
     } else {
-      setFeedback({ kind: 'error', text: action.payload || 'Failed to leave FPO' })
+      setFeedback({ kind: 'error', text: action.payload ? t(action.payload) : t('Failed to leave FPO') })
     }
   }
 
   const handleJoined = () => {
     setFeedback({
       kind: 'success',
-      text: 'Joined the FPO. Member count updated.',
+      text: t('Joined the FPO. Member count updated.'),
     })
     dispatch(fetchFpos())
     if (isSeller) dispatch(fetchMyFpos())
@@ -270,19 +272,19 @@ function FPOs() {
   return (
     <>
       <PageHeader
-        eyebrow="FPOs"
-        title="FPOs / Group Selling"
-        description="Aggregate your crop lot with other farmers' to reach larger buyers. Pool volume, share logistics, get a better price."
+        eyebrow={t("FPOs")}
+        title={t("FPOs / Group Selling")}
+        description={t("Aggregate your crop lot with other farmers' to reach larger buyers. Pool volume, share logistics, get a better price.")}
         actions={
           <>
             <Link to="/buyers" className="ac-btn-secondary">
-              Buyer marketplace
+              {t("Buyer marketplace")}
             </Link>
             <button
               onClick={() => setShowCreate((v) => !v)}
               className="ac-btn-primary"
             >
-              {showCreate ? 'Close' : '+ New FPO'}
+              {showCreate ? t('Close') : t('+ New FPO')}
             </button>
           </>
         }
@@ -292,32 +294,32 @@ function FPOs() {
 
       {seedStatus === 'succeeded' && seedResult && (
         <div className="mb-4 rounded-card border border-honey-200 bg-honey-50 p-3 text-sm text-honey-800">
-          Sample seed: <strong>{seedResult.inserted}</strong> inserted,{' '}
-          <strong>{seedResult.skipped}</strong> skipped. Total:{' '}
+          {t("Sample seed:")} <strong>{seedResult.inserted}</strong> {t("inserted")},{' '}
+          <strong>{seedResult.skipped}</strong> {t("skipped")}. {t("Total:")}{' '}
           <strong>{seedResult.total_after}</strong>.
         </div>
       )}
 
       {showCreate && (
         <form onSubmit={handleCreate} className="ac-card mb-6 p-5">
-          <p className="ac-section-label">New FPO</p>
+          <p className="ac-section-label">{t("New FPO")}</p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium text-ink-700">
-                FPO name
+                {t("FPO name")}
               </label>
               <input
                 type="text"
                 required
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="e.g. Nashik Onion Growers Co-op"
+                placeholder={t("e.g. Nashik Onion Growers Co-op")}
                 className={INPUT}
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-ink-700">
-                Location
+                {t("Location")}
               </label>
               <input
                 type="text"
@@ -326,13 +328,13 @@ function FPOs() {
                 onChange={(e) =>
                   setForm({ ...form, location: e.target.value })
                 }
-                placeholder="e.g. Nashik"
+                placeholder={t("e.g. Nashik")}
                 className={INPUT}
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-ink-700">
-                District (optional)
+                {t("District (optional)")}
               </label>
               <input
                 type="text"
@@ -345,7 +347,7 @@ function FPOs() {
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-ink-700">
-                State (optional)
+                {t("State (optional)")}
               </label>
               <input
                 type="text"
@@ -361,7 +363,7 @@ function FPOs() {
               disabled={createStatus === 'loading'}
               className="ac-btn-primary disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {createStatus === 'loading' ? 'Creating…' : 'Create FPO'}
+              {createStatus === 'loading' ? t('Creating…') : t('Create FPO')}
             </button>
             {createError && (
               <p className="text-sm text-rust-700">{createError}</p>
@@ -372,27 +374,27 @@ function FPOs() {
 
       {listStatus === 'loading' && (
         <div className="ac-card p-8 text-center text-sm text-ink-500">
-          Loading FPOs…
+          {t("Loading FPOs…")}
         </div>
       )}
       {listStatus === 'failed' && (
         <div className="mb-4 rounded-card border border-rust-200 bg-rust-50 p-5 text-sm text-rust-800">
-          {listError}
+          {listError ? t(listError) : t('Failed to load FPOs')}
         </div>
       )}
 
       {listStatus === 'succeeded' && list.length === 0 && (
         <EmptyState
           kind="empty"
-          title="No FPOs yet"
-          description="Create one above to get started, or seed sample FPOs to see how the group-selling flow works."
+          title={t("No FPOs yet")}
+          description={t("Create one above to get started, or seed sample FPOs to see how the group-selling flow works.")}
           action={
             <button
               onClick={() => dispatch(seedDemoFpos())}
               disabled={seedStatus === 'loading'}
               className="ac-btn-primary disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {seedStatus === 'loading' ? 'Seeding…' : 'Seed sample FPOs'}
+              {seedStatus === 'loading' ? t('Seeding…') : t('Seed sample FPOs')}
             </button>
           }
         />
@@ -419,7 +421,7 @@ function FPOs() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <h3 className="font-display text-lg text-ink-900">
-                      {str(f.name, 'Unnamed FPO')}
+                      {str(f.name, t('Unnamed FPO'))}
                     </h3>
                     <p className="text-sm text-ink-600">
                       📍 {str(f.location, '—')}
@@ -432,10 +434,10 @@ function FPOs() {
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     {isMember && (
-                      <span className="ac-chip ac-chip-success">✓ Joined</span>
+                      <span className="ac-chip ac-chip-success">✓ {t("Joined")}</span>
                     )}
                     {f.is_demo && (
-                      <span className="ac-chip ac-chip-honey">Sample</span>
+                      <span className="ac-chip ac-chip-honey">{t("Sample")}</span>
                     )}
                   </div>
                 </div>
@@ -446,13 +448,13 @@ function FPOs() {
 
                 <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-ink-700">
                   <span>
-                    Members: <strong>{members}</strong>
+                    {t("Members:")} <strong>{members}</strong>
                   </span>
                   {isMember && (
                     <span className="text-xs text-success-700">
                       {myLots === 1
-                        ? '1 of your crop lots is in this FPO'
-                        : `${myLots} of your crop lots are in this FPO`}
+                        ? t('1 of your crop lots is in this FPO')
+                        : `${myLots} ${t('of your crop lots are in this FPO')}`}
                     </span>
                   )}
                 </div>
@@ -462,14 +464,14 @@ function FPOs() {
                     onClick={() => setSelectedFpo(f.public_id)}
                     className="ac-btn-secondary"
                   >
-                    View aggregate
+                    {t("View aggregate")}
                   </button>
                   {isSeller && !isMember && (
                     <button
                       onClick={() => setJoiningFpoId(f.public_id)}
                       className="ac-btn-primary"
                     >
-                      Join FPO
+                      {t("Join FPO")}
                     </button>
                   )}
                   {isSeller && isMember && (
@@ -485,13 +487,13 @@ function FPOs() {
                         } else {
                           setFeedback({
                             kind: 'error',
-                            text: 'No member lot to leave with.',
+                            text: t('No member lot to leave with.'),
                           })
                         }
                       }}
                       className="ac-btn-danger"
                     >
-                      Leave FPO
+                      {t("Leave FPO")}
                     </button>
                   )}
                 </div>
@@ -526,17 +528,17 @@ function FPOs() {
       {selectedFpo && (
         <section className="ac-card mt-8 p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="ac-section-label">FPO aggregation</p>
+            <p className="ac-section-label">{t("FPO aggregation")}</p>
             <input
               type="text"
               value={crop}
               onChange={(e) => setCrop(e.target.value)}
-              placeholder="Filter by crop (optional)"
+              placeholder={t("Filter by crop (optional)")}
               className={INPUT + ' w-56'}
             />
           </div>
           {aggregateStatus === 'loading' && (
-            <p className="mt-3 text-sm text-ink-500">Computing…</p>
+            <p className="mt-3 text-sm text-ink-500">{t("Computing…")}</p>
           )}
           {aggregateStatus === 'succeeded' && aggregate && (
             <div className="mt-4 space-y-4">
@@ -549,10 +551,10 @@ function FPOs() {
                   <table className="w-full text-sm">
                     <thead className="text-left text-xs uppercase tracking-wide text-ink-500">
                       <tr>
-                        <th className="pb-2">Crop</th>
-                        <th className="pb-2">Lots</th>
-                        <th className="pb-2">Total qty</th>
-                        <th className="pb-2">Estimated value</th>
+                        <th className="pb-2">{t("Crop")}</th>
+                        <th className="pb-2">{t("Lots")}</th>
+                        <th className="pb-2">{t("Total qty")}</th>
+                        <th className="pb-2">{t("Estimated value")}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-ink-100">
@@ -565,11 +567,11 @@ function FPOs() {
                         return (
                           <tr key={i}>
                             <td className="py-2 font-medium text-ink-900">
-                              {str(row.crop_name, 'Unknown')}
+                              {str(row.crop_name, t('Unknown'))}
                             </td>
                             <td className="py-2 text-ink-700">{lotCount}</td>
                             <td className="py-2 text-ink-700">
-                              {totalQty} {qtyUnit}
+                              {totalQty} {t(qtyUnit)}
                             </td>
                             <td className="py-2 text-ink-700">₹{estValue}</td>
                           </tr>
@@ -579,13 +581,13 @@ function FPOs() {
                   </table>
                 </div>
               ) : (
-                <p className="text-sm text-ink-600">No members yet.</p>
+                <p className="text-sm text-ink-600">{t("No members yet.")}</p>
               )}
 
               {Array.isArray(aggregate.by_crop) &&
                 aggregate.by_crop.length > 0 && (
                   <div>
-                    <p className="ac-section-label">Member lots</p>
+                    <p className="ac-section-label">{t("Member lots")}</p>
                     <ul className="mt-2 space-y-1 text-sm text-ink-700">
                       {aggregate.by_crop
                         .flatMap((row) =>
@@ -608,13 +610,13 @@ function FPOs() {
                               }
                               className="rounded-full border border-rust-200 px-2.5 py-0.5 text-xs font-medium text-rust-700 transition hover:bg-rust-50"
                             >
-                              Leave
+                              {t("Leave")}
                             </button>
                           </li>
                         ))}
                     </ul>
                     <p className="mt-2 text-xs text-ink-500">
-                      Leaving an FPO is safe — your crop lot stays ACTIVE.
+                      {t("Leaving an FPO is safe — your crop lot stays ACTIVE.")}
                     </p>
                   </div>
                 )}
@@ -622,13 +624,13 @@ function FPOs() {
               {Array.isArray(aggregate.reachable_buyers) &&
                 aggregate.reachable_buyers.length > 0 && (
                   <div>
-                    <p className="ac-section-label">Reachable buyers</p>
+                    <p className="ac-section-label">{t("Reachable buyers")}</p>
                     <ul className="mt-2 space-y-1 text-sm text-ink-700">
                       {aggregate.reachable_buyers.map((rb, i) => (
                         <li key={i}>
-                          {str(rb?.buyer_name, 'Unknown buyer')} — needs{' '}
+                          {str(rb?.buyer_name, t('Unknown buyer'))} — {t('needs')}{' '}
                           {num(rb?.min_quantity, 0)}{' '}
-                          {str(rb?.quantity_unit, 'kg')} for{' '}
+                          {t(str(rb?.quantity_unit, 'kg'))} {t('for')}{' '}
                           {str(rb?.crop_name, '—')}
                         </li>
                       ))}

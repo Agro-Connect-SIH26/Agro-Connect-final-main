@@ -27,18 +27,20 @@ import api from '../../api/axios.js'
 const STORAGE_KEY = 'agroconnect.auth.v1'
 const TOKEN_KEY = 'agroconnect.auth.token.v1'
 
-function readPersisted() {
+  function readPersisted() {
   if (typeof window === 'undefined') {
     return {
       role: null, publicId: null, displayName: null, email: null,
       name: null, phone: null, isDemo: null,
-      activeBuyer: null, activeFpo: null, token: null,
+      activeBuyer: null, activeFpo: null, activeServiceProviderId: null, token: null,
+      verificationStatus: 'NOT_VERIFIED', verificationDetails: null, identityVerified: false,
     }
   }
   let user = {
     role: null, publicId: null, displayName: null, email: null,
     name: null, phone: null, isDemo: null,
-    activeBuyer: null, activeFpo: null,
+    activeBuyer: null, activeFpo: null, activeServiceProviderId: null,
+    verificationStatus: 'NOT_VERIFIED', verificationDetails: null, identityVerified: false,
   }
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY)
@@ -54,6 +56,10 @@ function readPersisted() {
         isDemo: parsed.isDemo ?? null,
         activeBuyer: parsed.activeBuyer || null,
         activeFpo: parsed.activeFpo || null,
+        activeServiceProviderId: parsed.activeServiceProviderId || null,
+        verificationStatus: parsed.verificationStatus || 'NOT_VERIFIED',
+        verificationDetails: parsed.verificationDetails || null,
+        identityVerified: parsed.identityVerified ?? false,
       }
     }
   } catch {
@@ -77,6 +83,12 @@ function applyUser(state, payload, token) {
   if (u.name != null) state.name = u.name
   if (u.phone != null) state.phone = u.phone
   if (u.is_demo != null) state.isDemo = !!u.is_demo
+  if (u.verification_status != null) state.verificationStatus = u.verification_status
+  if (u.verification_details !== undefined) state.verificationDetails = u.verification_details
+  if (u.identity_verified != null) state.identityVerified = !!u.identity_verified
+  if (u.active_service_provider_id != null) {
+    state.activeServiceProviderId = u.active_service_provider_id
+  }
   if (u.active_buyer_id != null) {
     state.activeBuyer = {
       id: u.active_buyer_id,
@@ -115,6 +127,10 @@ function writePersisted(state) {
         isDemo: state.isDemo,
         activeBuyer: state.activeBuyer,
         activeFpo: state.activeFpo,
+        activeServiceProviderId: state.activeServiceProviderId,
+        verificationStatus: state.verificationStatus,
+        verificationDetails: state.verificationDetails,
+        identityVerified: state.identityVerified,
       }),
     )
   } catch {
@@ -274,6 +290,34 @@ export const switchRole = createAsyncThunk(
   },
 )
 
+export const updateProfile = createAsyncThunk(
+  'auth/updateProfile',
+  async ({ name, phone, displayName } = {}, { rejectWithValue }) => {
+    try {
+      const response = await api.patch('/auth/profile', { name, phone, displayName })
+      return response.data
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.detail || error.response?.data?.message || 'failed to update profile',
+      )
+    }
+  },
+)
+
+export const submitVerification = createAsyncThunk(
+  'auth/submitVerification',
+  async ({ documentType, documentNumber } = {}, { rejectWithValue }) => {
+    try {
+      const response = await api.post('/auth/verify', { documentType, documentNumber })
+      return response.data
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.detail || error.response?.data?.message || 'failed to submit verification',
+      )
+    }
+  },
+)
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -400,6 +444,12 @@ const authSlice = createSlice({
       .addCase(switchRole.fulfilled, (state, action) => {
         applyUser(state, action.payload?.user, state.token)
       })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        applyUser(state, action.payload?.user, state.token)
+      })
+      .addCase(submitVerification.fulfilled, (state, action) => {
+        applyUser(state, action.payload?.user, state.token)
+      })
       .addCase(logout.fulfilled, (state) => {
         state.role = null
         state.publicId = null
@@ -433,8 +483,13 @@ export const selectToken = (state) => state.auth.token
 export const selectIsSeller = (state) => state.auth.role === 'SELLER'
 export const selectIsBuyer = (state) => state.auth.role === 'BUYER'
 export const selectIsFpo = (state) => state.auth.role === 'FPO'
+export const selectIsServiceProvider = (state) => state.auth.role === 'SERVICE_PROVIDER'
+export const selectActiveServiceProviderId = (state) => state.auth.activeServiceProviderId
 export const selectIsAuthed = (state) => !!state.auth.publicId
 export const selectAuthStatus = (state) => state.auth.status
 export const selectAuthError = (state) => state.auth.error
+export const selectVerificationStatus = (state) => state.auth.verificationStatus || 'NOT_VERIFIED'
+export const selectVerificationDetails = (state) => state.auth.verificationDetails
+export const selectIdentityVerified = (state) => !!state.auth.identityVerified
 
 export default authSlice.reducer

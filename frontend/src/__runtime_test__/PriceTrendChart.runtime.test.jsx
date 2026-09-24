@@ -16,6 +16,7 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import PriceTrendChart from '../components/PriceTrendChart.jsx'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 let hookError = null
 const onError = (where, e) => {

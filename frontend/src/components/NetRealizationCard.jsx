@@ -23,6 +23,7 @@
 import { useMemo, useState } from 'react'
 import { fmtInr, fmtInr2, fmtPerKg, fmtNumber } from '../utils/format.js'
 import useCountUp from '../hooks/useCountUp.js'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 // Conservative, transport-agnostic cost model — used as the default
 // preview so the card is informative on first render. When the
@@ -57,6 +58,8 @@ function computeNet(qtyKg, pricePerKg, override) {
 }
 
 export default function NetRealizationCard({ lot }) {
+  const { t } = useLanguage()
+
   const [price, setPrice] = useState(lot?.expected_price_per_kg || 25)
   const [override, setOverride] = useState({ avgKm: 120 })
 
@@ -81,10 +84,10 @@ export default function NetRealizationCard({ lot }) {
   if (!lot) return null
 
   return (
-    <section className="ac-card p-5" aria-label="Net realization">
+    <section className="ac-card p-5" aria-label={t("Net realization")}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="ac-section-label">What you'll actually earn</p>
+          <p className="ac-section-label">{t("What you'll actually earn")}</p>
           <p className="mt-1 font-display text-3xl text-ink-900">
             ₹{fmtInr(netAnim)}
           </p>
@@ -113,7 +116,7 @@ export default function NetRealizationCard({ lot }) {
           />
         </label>
         <label className="block">
-          <span className="text-xs font-medium text-ink-600">Avg distance (km)</span>
+          <span className="text-xs font-medium text-ink-600">{t("Avg distance (km)")}</span>
           <input
             type="number"
             min="0"
@@ -124,7 +127,7 @@ export default function NetRealizationCard({ lot }) {
           />
         </label>
         <div className="rounded-lg bg-earth-50 p-3 text-xs">
-          <p className="font-medium text-ink-700">Cost breakdown</p>
+          <p className="font-medium text-ink-700">{t("Cost breakdown")}</p>
           <ul className="mt-1.5 space-y-0.5 text-ink-500">
             <li>Transport · ₹{fmtInr(result.transport)}</li>
             <li>Loading · ₹{fmtInr(result.loading)}</li>
@@ -135,7 +138,7 @@ export default function NetRealizationCard({ lot }) {
       </div>
       <p className="mt-3 text-[11px] text-ink-400">
         Estimate based on default rates. For a route-specific figure,
-        check the <em>Decision support</em> card above — its per-market
+        check the <em>{t("Decision support")}</em> card above — its per-market
         rows use real distances from the configured routing API.
       </p>
     </section>

@@ -7,6 +7,8 @@ import RoleSelect from './pages/RoleSelect.jsx'
 import FarmerDashboard from './pages/FarmerDashboard.jsx'
 import SellerDashboard from './pages/SellerDashboard.jsx'
 import BuyerDashboard from './pages/BuyerDashboard.jsx'
+import FarmerProfile from './pages/FarmerProfile.jsx'
+import BuyerProfile from './pages/BuyerProfile.jsx'
 import CreateCropLot from './pages/CreateCropLot.jsx'
 import CropLotDetail from './pages/CropLotDetail.jsx'
 import MarketPrices from './pages/MarketPrices.jsx'
@@ -31,6 +33,8 @@ import NotFound from './components/NotFound.jsx'
 import AppShell from './components/AppShell.jsx'
 import MyCropsIndex from './pages/MyCropsIndex.jsx'
 import MyOffersIndex from './pages/MyOffersIndex.jsx'
+import ServiceDirectory from './pages/ServiceDirectory.jsx'
+import ServiceProviderDashboard from './pages/ServiceProviderDashboard.jsx'
 import { selectIsAuthed, selectRole } from './redux/slices/authSlice.js'
 
 // Small wrapper so the URL is the source of truth for the prefilled crop.
@@ -97,7 +101,10 @@ function App() {
       <Route element={<AuthedLayout />}>
 
         {/* Seller routes (role-gated) */}
-        <Route path="/seller" element={<RequireAuth role="SELLER"><SellerDashboard /></RequireAuth>} />
+        <Route path="/seller" element={<RequireAuth role="SELLER"><FarmerDashboard /></RequireAuth>} />
+        <Route path="/seller/profile" element={<RequireAuth role="SELLER"><FarmerProfile /></RequireAuth>} />
+        <Route path="/seller/demands" element={<RequireAuth role="SELLER"><FarmerDemands /></RequireAuth>} />
+        <Route path="/seller/demands/:publicId" element={<RequireAuth role="SELLER"><DemandDetails /></RequireAuth>} />
         <Route path="/seller/crop-lots" element={<RequireAuth role="SELLER"><MyCropsIndex /></RequireAuth>} />
         <Route path="/seller/crop-lots/new" element={<RequireAuth role="SELLER"><CreateCropLot /></RequireAuth>} />
         <Route path="/seller/crop-lots/:publicId" element={<RequireAuth role="SELLER"><CropLotDetail /></RequireAuth>} />
@@ -113,6 +120,7 @@ function App() {
 
         {/* Buyer routes (role-gated) */}
         <Route path="/buyer" element={<RequireAuth role="BUYER"><BuyerDashboard /></RequireAuth>} />
+        <Route path="/buyer/profile" element={<RequireAuth role="BUYER"><BuyerProfile /></RequireAuth>} />
         <Route path="/buyer/demands" element={<RequireAuth role="BUYER"><BuyerMyDemands /></RequireAuth>} />
         <Route path="/buyer/demands/new" element={<RequireAuth role="BUYER"><CreateDemand /></RequireAuth>} />
         <Route path="/buyer/demands/:publicId" element={<RequireAuth role="BUYER"><DemandDetails /></RequireAuth>} />
@@ -121,6 +129,9 @@ function App() {
         <Route path="/buyer/offers/:publicId" element={<RequireAuth role="BUYER"><BuyerOfferDetail /></RequireAuth>} />
         <Route path="/buyer/deals" element={<RequireAuth role="BUYER"><MyDeals /></RequireAuth>} />
         <Route path="/buyer/deals/:publicId" element={<RequireAuth role="BUYER"><Deal /></RequireAuth>} />
+
+        {/* Service Provider routes (role-gated) */}
+        <Route path="/provider" element={<RequireAuth role="SERVICE_PROVIDER"><ServiceProviderDashboard /></RequireAuth>} />
 
         {/* Legacy / shared — auth required. */}
         <Route path="/farmer" element={<RequireAuth role="SELLER"><FarmerDashboard /></RequireAuth>} />
@@ -138,6 +149,7 @@ function App() {
         <Route path="/farmer/offers/:publicId" element={<RequireAuth role="SELLER"><OfferDetail /></RequireAuth>} />
         <Route path="/buyers" element={<RequireAuth><Buyers /></RequireAuth>} />
         <Route path="/fpos" element={<RequireAuth><FPOs /></RequireAuth>} />
+        <Route path="/services" element={<RequireAuth><ServiceDirectory /></RequireAuth>} />
         <Route path="/market-prices" element={<RequireAuth><MarketPrices /></RequireAuth>} />
         <Route
           path="/market-prices/:crop"

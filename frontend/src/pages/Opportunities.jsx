@@ -22,17 +22,19 @@ import {
 } from '../utils/format.js'
 import PageHeader from '../components/PageHeader.jsx'
 import usePageMeta from '../hooks/usePageMeta.js'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 const INPUT =
   'w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500'
 
 function Opportunities() {
+  const { t } = useLanguage()
   const { publicId } = useParams()
   const dispatch = useDispatch()
   const { currentLot, detailStatus } = useSelector((state) => state.cropLots)
   usePageMeta({
-    title: 'Market opportunities',
-    description: 'Estimate net realisation at a chosen market — distance, vehicle, and transport cost included.',
+    title: t('Market opportunities'),
+    description: t('Estimate net realisation at a chosen market — distance, vehicle, and transport cost included.'),
   })
   const {
     current: estimate,
@@ -76,20 +78,20 @@ function Opportunities() {
   return (
     <>
       <PageHeader
-        eyebrow={currentLot ? currentLot.crop_name : 'Selling'}
-        title="Market opportunities"
+        eyebrow={currentLot ? currentLot.crop_name : t('Selling')}
+        title={t("Market opportunities")}
         subtitle={
           currentLot
-            ? `Estimate net realisation for ${currentLot.crop_name} · ${currentLot.quantity} ${currentLot.quantity_unit} at a chosen destination market.`
-            : 'Estimate net realisation for this crop lot at a chosen destination market.'
+            ? `${t("Estimate net realisation for")} ${currentLot.crop_name} · ${currentLot.quantity} ${currentLot.quantity_unit} ${t("at a chosen destination market.")}`
+            : t('Estimate net realisation for this crop lot at a chosen destination market.')
         }
-        back={{ to: `/seller/crop-lots/${publicId}`, label: 'Back to lot' }}
+        back={{ to: `/seller/crop-lots/${publicId}`, label: t('Back to lot') }}
         actions={
           <Link
             to={`/seller/crop-lots/${publicId}/decision`}
             className="ac-btn-secondary"
           >
-            Decision support
+            {t("Decision support")}
           </Link>
         }
       />
@@ -101,7 +103,7 @@ function Opportunities() {
       >
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-700">
-            Market
+            {t("Market")}
           </label>
           <input
             type="text"
@@ -110,13 +112,13 @@ function Opportunities() {
             onChange={(e) =>
               setDestination({ ...destination, market: e.target.value })
             }
-            placeholder="e.g. Azadpur Mandi"
+            placeholder={t("e.g. Azadpur Mandi")}
             className={INPUT}
           />
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-700">
-            Label
+            {t("Label")}
           </label>
           <input
             type="text"
@@ -125,20 +127,20 @@ function Opportunities() {
             onChange={(e) =>
               setDestination({ ...destination, label: e.target.value })
             }
-            placeholder="e.g. Delhi"
+            placeholder={t("e.g. Delhi")}
             className={INPUT}
           />
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-700">
-            Vehicle
+            {t("Vehicle")}
           </label>
           <select
             value={vehicleType}
             onChange={(e) => setVehicleType(e.target.value)}
             className={INPUT}
           >
-            <option value="">Default vehicle (20FT)</option>
+            <option value="">{t("Default vehicle (20FT)")}</option>
             {vehicleOptions.map((vt) => (
               <option key={vt} value={vt}>
                 {vt} · ₹{Number(vehicleRates[vt] || 0).toFixed(2)}/km
@@ -151,20 +153,19 @@ function Opportunities() {
           disabled={estimateStatus === 'loading' || !lotIdNum}
           className="ac-btn-primary disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {estimateStatus === 'loading' ? 'Computing…' : 'Estimate'}
+          {estimateStatus === 'loading' ? t('Computing…') : t('Estimate')}
         </button>
 
         {config && config.nhb_scheme && (
           <p className="sm:col-span-4 mt-1 text-xs text-ink-500">
-            Reference rates per km. See NHB scheme reference for cold-storage
-            context below.
+            {t("Reference rates per km. See NHB scheme reference for cold-storage context below.")}
           </p>
         )}
       </form>
 
       {estimateError && (
         <div className="mb-4 rounded-card border border-rust-200 bg-rust-50 p-4 text-sm text-rust-800">
-          {estimateError}
+          {estimateError ? t(estimateError) : t('Could not estimate logistics.')}
         </div>
       )}
 
@@ -176,13 +177,13 @@ function Opportunities() {
               {estimate.destination_label || NOT_AVAILABLE} ·{' '}
               {estimate.destination_market || NOT_AVAILABLE}
             </h2>
-            <span className="ac-chip ac-chip-honey">Estimate</span>
+            <span className="ac-chip ac-chip-honey">{t("Estimate")}</span>
           </div>
 
           <div className="grid gap-4 p-5 sm:grid-cols-3">
             <div className="rounded-card border border-ink-200 p-3">
               <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                Gross value
+                {t("Gross value")}
               </p>
               <p className="mt-1 font-display text-2xl text-ink-900">
                 {fmtInr(estimate.gross_value)}
@@ -190,7 +191,7 @@ function Opportunities() {
             </div>
             <div className="rounded-card border border-ink-200 p-3">
               <p className="text-xs font-medium uppercase tracking-wide text-ink-500">
-                Total logistics
+                {t("Total logistics")}
               </p>
               <p className="mt-1 font-display text-2xl text-ink-900">
                 {fmtInr(estimate.total_logistics_cost)}
@@ -198,7 +199,7 @@ function Opportunities() {
             </div>
             <div className="rounded-card border border-success-200 bg-success-50 p-3">
               <p className="text-xs font-medium uppercase tracking-wide text-success-700">
-                Net realisation
+                {t("Net realisation")}
               </p>
               <p className="mt-1 font-display text-2xl text-success-700">
                 {fmtInr(estimate.net_realization || estimate.net_realisation)}
@@ -211,7 +212,7 @@ function Opportunities() {
               const dist = fmtDistanceLabel(estimate)
               return (
                 <div className="flex justify-between sm:block">
-                  <dt className="text-ink-500">Distance</dt>
+                  <dt className="text-ink-500">{t("Distance")}</dt>
                   <dd className="font-medium text-ink-900">
                     {dist.text}
                     {dist.hint ? (
@@ -224,19 +225,19 @@ function Opportunities() {
               )
             })()}
             <div className="flex justify-between sm:block">
-              <dt className="text-ink-500">Vehicle</dt>
+              <dt className="text-ink-500">{t("Vehicle")}</dt>
               <dd className="font-medium text-ink-900">
                 {estimate.vehicle_type || '20FT'}
               </dd>
             </div>
             <div className="flex justify-between sm:block">
-              <dt className="text-ink-500">Transport</dt>
+              <dt className="text-ink-500">{t("Transport")}</dt>
               <dd className="font-medium text-ink-900">
                 {fmtInr(estimate.transport_cost)}
               </dd>
             </div>
             <div className="flex justify-between sm:block">
-              <dt className="text-ink-500">Loading + Unloading</dt>
+              <dt className="text-ink-500">{t("Loading + Unloading")}</dt>
               <dd className="font-medium text-ink-900">
                 {fmtInr(
                   Number(estimate.loading_cost || 0) +
@@ -245,13 +246,13 @@ function Opportunities() {
               </dd>
             </div>
             <div className="flex justify-between sm:block">
-              <dt className="text-ink-500">Other charges</dt>
+              <dt className="text-ink-500">{t("Other charges")}</dt>
               <dd className="font-medium text-ink-900">
                 {fmtInr(estimate.other_charges)}
               </dd>
             </div>
             <div className="flex justify-between sm:block">
-              <dt className="text-ink-500">Modal price</dt>
+              <dt className="text-ink-500">{t("Modal price")}</dt>
               <dd className="font-medium text-ink-900">
                 {fmtPerKg(estimate.modal_price_per_kg)}{' '}
                 <span
@@ -261,7 +262,7 @@ function Opportunities() {
                       : 'ac-chip ac-chip-honey ml-1'
                   }
                 >
-                  {estimate.is_live_price ? 'live' : 'sample fallback'}
+                  {estimate.is_live_price ? t('live') : t('sample fallback')}
                 </span>
               </dd>
             </div>
@@ -272,7 +273,7 @@ function Opportunities() {
               to={`/seller/crop-lots/${publicId}/decision`}
               className="text-sm font-medium text-primary-700 transition hover:text-primary-800"
             >
-              See decision support for this lot →
+              {t("See decision support for this lot")} →
             </Link>
           </div>
         </section>
@@ -280,13 +281,13 @@ function Opportunities() {
 
       {detailStatus === 'loading' && !estimate && (
         <div className="ac-card p-6 text-center text-sm text-ink-500">
-          Loading lot…
+          {t("Loading lot…")}
         </div>
       )}
 
       {detailStatus === 'succeeded' && currentLot && !estimate && (
         <p className="mt-4 text-xs text-ink-500">
-          Showing estimates for{' '}
+          {t("Showing estimates for")}{' '}
           <strong className="text-ink-800">{currentLot.crop_name}</strong> ·{' '}
           {currentLot.quantity} {currentLot.quantity_unit}
         </p>

@@ -259,11 +259,15 @@ async function predictPriceML({
   let sourceUsed = 'agmarknet';
   try {
     // First try AGMARKNET source
-    rows = await MarketPrice.find(filterAgmarknet).lean();
+    rows = await MarketPrice.find(filterAgmarknet)
+      .select('priceDate arrivalDate pricePerKg')
+      .lean();
 
     // If insufficient data from AGMARKNET, fall back to all sources
     if (rows.length === 0) {
-      rows = await MarketPrice.find(filterAllSources).lean();
+      rows = await MarketPrice.find(filterAllSources)
+        .select('priceDate arrivalDate pricePerKg')
+        .lean();
       sourceUsed = 'mixed';
     }
   } catch (_) {

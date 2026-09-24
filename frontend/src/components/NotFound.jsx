@@ -15,8 +15,11 @@ import { Link, useLocation } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { selectIsAuthed, selectRole } from '../redux/slices/authSlice.js'
 import Brand from './Brand.jsx'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 export default function NotFound() {
+  const { t } = useLanguage()
+
   const isAuthed = useSelector(selectIsAuthed)
   const role = useSelector(selectRole)
   const location = useLocation()
@@ -27,7 +30,7 @@ export default function NotFound() {
     <div className="flex min-h-screen flex-col bg-earth-50 text-ink-800">
       <header className="border-b border-earth-200 bg-white">
         <div className="mx-auto flex h-14 max-w-6xl items-center px-4 sm:px-6">
-          <Link to={home} aria-label="AgroConnect home">
+          <Link to={home} aria-label={t("AgroConnect home")}>
             <Brand size="sm" />
           </Link>
         </div>
@@ -39,9 +42,7 @@ export default function NotFound() {
         >
           404
         </p>
-        <h1 className="mt-4 font-display text-2xl text-ink-900 sm:text-3xl">
-          We can't find that page
-        </h1>
+        <h1 className="mt-4 font-display text-2xl text-ink-900 sm:text-3xl">{t("We can't find that page")}</h1>
         <p className="mt-3 max-w-md text-ink-500">
           The link you followed may be broken, or the page may have moved
           when we redesigned the app. Try heading home — the journey you
@@ -65,17 +66,11 @@ export default function NotFound() {
             >
               <path d="M3 11.5 12 4l9 7.5" />
               <path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9" />
-            </svg>
-            Go to home
-          </Link>
+            </svg>{t("Go to home")}</Link>
           {isAuthed && (
-            <Link to="/role" className="ac-btn-secondary">
-              Switch role
-            </Link>
+            <Link to="/role" className="ac-btn-secondary">{t("Switch role")}</Link>
           )}
-          <Link to="/market-prices" className="ac-btn-ghost">
-            Browse market prices
-          </Link>
+          <Link to="/market-prices" className="ac-btn-ghost">{t("Browse market prices")}</Link>
         </div>
         <p className="mt-8 text-xs text-ink-400">
           Tip — the side bar on the left (or the bottom bar on mobile)

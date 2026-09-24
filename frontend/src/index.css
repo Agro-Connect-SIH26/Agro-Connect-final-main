@@ -232,17 +232,20 @@ body {
 }
 
 /* =============================================================================
-   MOTION — respect prefers-reduced-motion globally. We never use big,
-   decorative animations; we use gentle fades and a 1px lift on hover.
-   Users who prefer reduced motion see none of it.
+   MOTION — respect prefers-reduced-motion globally. We disable looping and
+   structural animations, but preserve state transition feedback (like hover colors
+   and focus rings).
    ============================================================================= */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
+
+  /* Strip spatial transforms from interaction feedback */
+  .ac-card-hover { transform: none !important; }
+  .ac-press:active { transform: none !important; }
 }
 
 /* Star-rating / tiny inline glyph: an old seedling mark used as the

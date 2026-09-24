@@ -12,6 +12,7 @@
  *   - Tooltip explains the factors without inventing any "AI" framing.
  */
 import { Info } from 'lucide-react'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 function tier(score) {
   if (score == null) return 'ink'
@@ -37,12 +38,12 @@ function tooltip(credibility) {
 }
 
 export default function CredibilityBadge({ credibility, compact = false }) {
+  const { t } = useLanguage()
+
   if (!credibility) return null
   if (!credibility.available) {
     return (
-      <span className="ac-chip ac-chip-ink" title="No deal history yet">
-        Not enough history yet
-      </span>
+      <span className="ac-chip ac-chip-ink" title={t("No deal history yet")}>{t("Not enough history yet")}</span>
     )
   }
   const tone = TONE[tier(credibility.score)]

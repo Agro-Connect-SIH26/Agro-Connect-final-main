@@ -7,8 +7,10 @@ import PageHeader from '../components/PageHeader.jsx'
 import CropImage from '../components/CropImage.jsx'
 import EmptyState from '../components/EmptyState.jsx'
 import usePageMeta from '../hooks/usePageMeta.js'
+import { useLanguage } from '../hooks/LanguageContext.jsx'
 
 function StatusBadge({ status }) {
+  const { t } = useLanguage()
   const styles = {
     DRAFT: 'bg-earth-100 text-ink-700',
     ACTIVE: 'bg-success-50 text-success-700',
@@ -17,19 +19,20 @@ function StatusBadge({ status }) {
   }
   return (
     <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${styles[status] || styles.DRAFT}`}>
-      {status}
+      {t(status || 'DRAFT')}
     </span>
   )
 }
 
 function SellerDashboard() {
+  const { t } = useLanguage()
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const isSeller = useSelector(selectIsSeller)
   const { list, listStatus, listError } = useSelector((state) => state.cropLots)
   usePageMeta({
-    title: 'Seller dashboard',
-    description: 'Manage your crop lots, respond to buyer offers, and track your deals in one place.',
+    title: t('Seller dashboard'),
+    description: t('Manage your crop lots, respond to buyer offers, and track your deals in one place.'),
   })
 
   useEffect(() => {
@@ -44,16 +47,16 @@ function SellerDashboard() {
   return (
     <>
       <PageHeader
-        eyebrow="Selling"
-        title="Seller dashboard"
-        description="Manage your crop lots, respond to offers, and track your deals."
+        eyebrow={t("Selling")}
+        title={t("Seller dashboard")}
+        description={t("Manage your crop lots, respond to offers, and track your deals.")}
         actions={
           <>
             <Link to="/seller/deals" className="ac-btn-secondary">
-              My deals
+              {t("My deals")}
             </Link>
             <Link to="/seller/crop-lots/new" className="ac-btn-primary">
-              + List a new crop lot
+              {t("+ List a new crop lot")}
             </Link>
           </>
         }
@@ -63,30 +66,30 @@ function SellerDashboard() {
         {/* Sell workflow helper */}
         <div className="mb-6 rounded-card border border-primary-200 bg-primary-50/40 p-4 text-sm text-ink-700">
           <p>
-            <strong className="text-ink-900">Sell workflow:</strong> List a lot
-            → Buyers offer → You counter or accept → Crop lot becomes{' '}
-            <span className="rounded bg-primary-100 px-1 text-primary-800">SOLD</span>{' '}
-            → Track delivery &amp; payment under <em>My deals</em>.
+            <strong className="text-ink-900">{t("Sell workflow:")}</strong> {t("List a lot")}
+            → {t("Buyers offer")} → {t("You counter or accept")} → {t("Crop lot becomes")}{' '}
+            <span className="rounded bg-primary-100 px-1 text-primary-800">{t("SOLD")}</span>{' '}
+            → {t("Track delivery & payment under")} <em>{t("My deals")}</em>.
           </p>
         </div>
 
         {listStatus === 'loading' && (
           <div className="ac-card p-8 text-center text-sm text-ink-500">
-            Loading crop lots…
+            {t("Loading crop lots…")}
           </div>
         )}
 
         {listStatus === 'failed' && (
           <EmptyState
             kind="error"
-            title="Could not load crop lots"
-            description={listError || 'Please retry.'}
+            title={t("Could not load crop lots")}
+            description={listError ? t(listError) : t('Please retry.')}
             action={
               <button
                 onClick={() => dispatch(fetchCropLots())}
                 className="ac-btn-secondary"
               >
-                Retry
+                {t("Retry")}
               </button>
             }
           />
@@ -95,14 +98,14 @@ function SellerDashboard() {
         {listStatus === 'succeeded' && list.length === 0 && (
           <EmptyState
             kind="empty"
-            title="No crop lots yet"
-            description="Create your first crop lot to start connecting with buyers."
+            title={t("No crop lots yet")}
+            description={t("Create your first crop lot to start connecting with buyers.")}
             action={
               <Link
                 to="/seller/crop-lots/new"
                 className="ac-btn-primary"
               >
-                + List a crop lot
+                {t("+ List a crop lot")}
               </Link>
             }
           />
@@ -142,13 +145,13 @@ function SellerDashboard() {
                     </div>
 
                     <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs text-ink-600">
-                      <dt className="text-ink-400">Quantity</dt>
+                      <dt className="text-ink-400">{t("Quantity")}</dt>
                       <dd className="text-right font-medium text-ink-900">
                         {lot.quantity} {lot.quantity_unit}
                       </dd>
                       {lot.location && (
                         <>
-                          <dt className="text-ink-400">Location</dt>
+                          <dt className="text-ink-400">{t("Location")}</dt>
                           <dd className="truncate text-right font-medium text-ink-700">
                             {lot.location}
                           </dd>
@@ -156,7 +159,7 @@ function SellerDashboard() {
                       )}
                       {lot.harvest_date && (
                         <>
-                          <dt className="text-ink-400">Harvest</dt>
+                          <dt className="text-ink-400">{t("Harvest")}</dt>
                           <dd className="text-right font-medium text-ink-700">
                             {new Date(lot.harvest_date).toLocaleDateString()}
                           </dd>
@@ -164,7 +167,7 @@ function SellerDashboard() {
                       )}
                       {lot.minimum_acceptable_price ? (
                         <>
-                          <dt className="text-ink-400">Min price</dt>
+                          <dt className="text-ink-400">{t("Min price")}</dt>
                           <dd className="text-right font-medium text-primary-700">
                             ₹{lot.minimum_acceptable_price}/{lot.quantity_unit}
                           </dd>
@@ -179,31 +182,31 @@ function SellerDashboard() {
                     to={`/seller/crop-lots/${lot.public_id}/offers`}
                     className="rounded-full border border-primary-200 bg-white px-2.5 py-1 font-medium text-primary-700 transition hover:bg-primary-50"
                   >
-                    Offers
+                    {t("Offers")}
                   </Link>
                   <Link
                     to={`/seller/crop-lots/${lot.public_id}/buyers`}
                     className="rounded-full border border-primary-200 bg-white px-2.5 py-1 font-medium text-primary-700 transition hover:bg-primary-50"
                   >
-                    Buyers
+                    {t("Buyers")}
                   </Link>
                   <Link
                     to={`/seller/crop-lots/${lot.public_id}/opportunities`}
                     className="rounded-full border border-primary-200 bg-white px-2.5 py-1 font-medium text-primary-700 transition hover:bg-primary-50"
                   >
-                    Opportunities
+                    {t("Opportunities")}
                   </Link>
                   <Link
                     to={`/seller/crop-lots/${lot.public_id}/decision`}
                     className="rounded-full border border-primary-200 bg-white px-2.5 py-1 font-medium text-primary-700 transition hover:bg-primary-50"
                   >
-                    Decision
+                    {t("Decision")}
                   </Link>
                   <Link
                     to={`/seller/crop-lots/${lot.public_id}/quality`}
                     className="rounded-full border border-primary-200 bg-white px-2.5 py-1 font-medium text-primary-700 transition hover:bg-primary-50"
                   >
-                    Quality
+                    {t("Quality")}
                   </Link>
                 </div>
               </article>
